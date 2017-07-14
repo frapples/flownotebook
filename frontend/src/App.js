@@ -3,9 +3,14 @@ import logo from './logo.svg';
 import Button from 'antd/lib/button';
 import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider } from 'antd';
 import './App.css';
+import './markdown.css';
 import moment from 'moment';
 
+import ReactDOM from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+
 import NoteManager from './NoteManager.js';
+import { markdown_h1_split } from './utils.js';
 
 import 'moment/locale/zh-cn';
 moment.locale('zh-cn');
@@ -115,6 +120,25 @@ class App extends React.Component {
     }
 
     render() {
+        const input = `
+# java Web编程笔记
+java是一种强类型语言，java是行业内web技术中的热门语言之一。
+## 开发环境配置
+目前存在以下可以使用的IDE，可按需选用：
+- Eclipse
+- MyEclipse
+- intellij idea
+
+java web技术需要用到以下部分：
+- jdk 基本的java开发环境
+- servlet java用于web开发的标准API
+- Tomcat java web开发的容器
+- MySQL 一款开源的数据库
+
+## servlet API介绍
+servlet包含两个最主要的类，Request和Response。
+                      `;
+        const result = markdown_h1_split(input);
         return (
             <Layout>
                 <Header>
@@ -142,7 +166,7 @@ class App extends React.Component {
                         <Content style={{ background: '#fff', padding: 18, margin: 0, minHeight: 500 }}>
                             <section style={{ "border-bottom-style": "inset", "border-width" : "1px" }}>
                                 <Row>
-                                    <Col span={18}> <h1>这是一篇笔记</h1> </Col>
+                                    <Col span={18}> <div className="markdown"> <h1>{ result.h1 }</h1></div></Col>
                                     <Col span={4} offset={2}> <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} /> </Col>
                                 </Row>
                             </section>
@@ -156,15 +180,9 @@ class App extends React.Component {
                             <Tag color="purple">purple</Tag>
                         </div>
                         <article style={{ "padding-left" : '15px', 'font-size': '15px' }}>
-                            <h2>React是什么</h2>
-                            <li>react是一种js框架</li>
-                            <li>react采用jsx</li>
-                            <li>react颠覆的前端的传统实践</li>
-
-                            <h2>如何开始React</h2>
-                            <li>安装react</li>
-                            <li>配置react</li>
-                            <li>开始一个hello world</li>
+                            <ReactMarkdown
+                            className="markdown"
+                                source={result.remain} />
                         </article>
                         </Content>
                     </Layout>

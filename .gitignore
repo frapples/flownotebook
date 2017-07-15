@@ -106,4 +106,7 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
-backend/public/
+frontend/build/
+frontend/public/
+backend/static/
+

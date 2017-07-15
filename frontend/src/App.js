@@ -122,7 +122,7 @@ class App extends React.Component {
     render() {
         const input = `
 # java Web编程笔记
-java是一种强类型语言，java是行业内web技术中的热门语言之一。
+java是一种强类型语言，java是行业内 **web技术** 中的热门语言之一。
 ## 开发环境配置
 目前存在以下可以使用的IDE，可按需选用：
 - Eclipse

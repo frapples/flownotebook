@@ -30,24 +30,22 @@ class SiderNoteList extends React.Component {
         return (
             <Menu
                 mode="inline"
-                defaultSelectedKeys={[this.note_key(this.props.group_id, this.props.note_id).toString(), ]}
+                defaultSelectedKeys={[this.props.note_id.toString(), ]}
                 defaultOpenKeys={[this.props.group_id.toString(), ]}
-                style={{ height: '100%', borderRight: 0 }} >
+                style={{ height: '100%', borderRight: 0 }}
+                onClick={ (e) => this.props.onNoteSelected(parseInt(e.key)) }
+            >
                 {
                     this.props.group_struct.map((group, group_key) => (
                         <SubMenu key={group_key} title={<span><Icon type="user" />{group.name}</span>}>
                             {
-                                group.children.map((note_name, key) => <Menu.Item key={this.note_key(group_key, key)}>{note_name}</Menu.Item>)
+                                group.children.map((note) => <Menu.Item key={note.key}>{note.name}</Menu.Item>)
                             }
                         </SubMenu>)
                     )
                 }
             </Menu>
         );
-    }
-
-    note_key(group_id, note_id) {
-        return group_id * 1000 + note_id;
     }
 }
 
@@ -96,7 +94,7 @@ class App extends React.Component {
     state = {
         notebook_id: 0,
         workspace_id: 0,
-        group_id: 0,
+        group_id: 1,
         note_id: 0,
     }
 
@@ -110,35 +108,21 @@ class App extends React.Component {
     }
 
     onNotebookChanged = (key) => {
-        this.setState({notebook_id: key});
+        this.setState({notebook_id: key, note_id: -1});
         message.info('选择笔记本' + this.note_manager.get_notebooks()[key]);
     }
 
     onWorkspaceChanged = (key) => {
-        this.setState({workspace_id: key});
+        this.setState({workspace_id: key, note_id: -1});
         message.info('选择工作区' + this.note_manager.get_workspaces(this.state.notebook_id)[key]);
     }
 
+    onNoteChanged = (key) => {
+        this.setState({note_id: key});
+    }
+
     render() {
-        const input = `
-# java Web编程笔记
-java是一种强类型语言，java是行业内 **web技术** 中的热门语言之一。
-## 开发环境配置
-目前存在以下可以使用的IDE，可按需选用：
-- Eclipse
-- MyEclipse
-- intellij idea
-
-java web技术需要用到以下部分：
-- jdk 基本的java开发环境
-- servlet java用于web开发的标准API
-- Tomcat java web开发的容器
-- MySQL 一款开源的数据库
-
-## servlet API介绍
-servlet包含两个最主要的类，Request和Response。
-                      `;
-        const result = markdown_h1_split(input);
+        const markdown_result = () => markdown_h1_split(this.note_manager.get_note_content(this.state.note_id));
         return (
             <Layout>
                 <Header>
@@ -159,6 +143,7 @@ servlet包含两个最主要的类，Request和Response。
                             group_id = {this.state.group_id}
                             note_id = {this.state.note_id}
                             group_struct = { this.note_manager.get_group_struct(this.state.notebook_id, this.state.workspace_id) }
+                            onNoteSelected = { this.onNoteChanged }
                         />
                     </Sider>
 
@@ -166,7 +151,7 @@ servlet包含两个最主要的类，Request和Response。
                         <Content style={{ background: '#fff', padding: 18, margin: 0, minHeight: 500 }}>
                             <section style={{ "border-bottom-style": "inset", "border-width" : "1px" }}>
                                 <Row>
-                                    <Col span={18}> <div className="markdown"> <h1>{ result.h1 }</h1></div></Col>
+                                    <Col span={18}> <div className="markdown"> <h1>{ markdown_result().h1 }</h1></div></Col>
                                     <Col span={4} offset={2}> <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} /> </Col>
                                 </Row>
                             </section>
@@ -182,7 +167,7 @@ servlet包含两个最主要的类，Request和Response。
                         <article style={{ "padding-left" : '15px', 'font-size': '15px' }}>
                             <ReactMarkdown
                             className="markdown"
-                                source={result.remain} />
+                                source={ markdown_result().remain } />
                         </article>
                         </Content>
                     </Layout>

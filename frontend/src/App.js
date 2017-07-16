@@ -1,7 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
-import Button from 'antd/lib/button';
-import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider } from 'antd';
+import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card } from 'antd';
 import './App.css';
 import './markdown.css';
 import moment from 'moment';
@@ -33,8 +32,13 @@ class SiderNoteList extends React.Component {
                 defaultSelectedKeys={[this.props.note_id.toString(), ]}
                 defaultOpenKeys={[this.props.group_id.toString(), ]}
                 style={{ height: '100%', borderRight: 0 }}
-                onClick={ (e) => this.props.onNoteSelected(parseInt(e.key)) }
+                onClick={ (e) => { e.item ? this.props.onNoteSelected(parseInt(e.key)) : null  }}
             >
+            <Input.Search
+            placeholder="input search text"
+            style={{ width: "92%", "margin-left": "4%"}}
+            onSearch={value => console.log(value)}
+            />
                 {
                     this.props.group_struct.map((group, group_key) => (
                         <SubMenu key={group_key} title={<span><Icon type="user" />{group.name}</span>}>
@@ -44,6 +48,7 @@ class SiderNoteList extends React.Component {
                         </SubMenu>)
                     )
                 }
+            <Icon type="plus" style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
             </Menu>
         );
     }
@@ -85,6 +90,7 @@ class WorkSpace extends React.Component {
                         (name, key) => <Menu.Item key={key}>{name}</Menu.Item>
                     )
                 }
+             <Button icon="plus" ghost />
             </Menu>
         );
     }
@@ -123,6 +129,15 @@ class App extends React.Component {
 
     render() {
         const markdown_result = () => markdown_h1_split(this.note_manager.get_note_content(this.state.note_id));
+
+        const updated_log = (
+            <Timeline>
+                <Timeline.Item>2017-09-01 增加了3行，删除了2行。</Timeline.Item>
+                <Timeline.Item>2016-09-03增加了9行，删除了1行。</Timeline.Item>
+                <Timeline.Item>2015-09-01增加了3行，删除了2行。</Timeline.Item>
+                <Timeline.Item>2015-07-01 创建笔记。 </Timeline.Item>
+            </Timeline>
+        );
         return (
             <Layout>
                 <Header>
@@ -148,14 +163,24 @@ class App extends React.Component {
                     </Sider>
 
                     <Layout style={{ padding: '15px 15px 15px' }}>
-                        <Content style={{ background: '#fff', padding: 18, margin: 0, minHeight: 500 }}>
-                            <section style={{ "border-bottom-style": "inset", "border-width" : "1px" }}>
+                        <Card bodyStyle={{ 'padding-top': '5px' }} title = {
                                 <Row>
-                                    <Col span={18}> <div className="markdown"> <h1>{ markdown_result().h1 }</h1></div></Col>
-                                    <Col span={4} offset={2}> <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} /> </Col>
+                                    <Col span={18}> <div className="markdown" style={{display: 'inline-flex', 'align-items': 'center'}}>
+                                        <h1>{ markdown_result().h1 }</h1>
+                                            <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                                        <Popover content={updated_log} title="修改记录">
+                                            <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                                        </Popover>
+                                    </div>
+                                    </Col>
+                                    <Col span={4} offset={2}>
+                                        <div style={{ 'padding-top': '5px'}}>
+                                            <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} />
+                                        </div>
+                                    </Col>
                                 </Row>
-                            </section>
-                        <div style={{ 'padding-top': '5px', 'padding-bottom': '5px'}}>
+                        } extra={ "" } style={{ }}>
+                        <div style={{ 'padding-bottom': '5px'}}>
                             <Tag color="pink">pink</Tag>
                             <Tag color="red">red</Tag>
                             <Tag color="orange">orange</Tag>
@@ -164,12 +189,21 @@ class App extends React.Component {
                             <Tag color="blue">blue</Tag>
                             <Tag color="purple">purple</Tag>
                         </div>
-                        <article style={{ "padding-left" : '15px', 'font-size': '15px' }}>
-                            <ReactMarkdown
-                            className="markdown"
-                                source={ markdown_result().remain } />
-                        </article>
-                        </Content>
+                        <div style={{ display: 'flex'}}>
+                            <article style={{ "padding-left" : '15px', 'font-size': '15px', 'width': '87%'}}>
+                                <ReactMarkdown
+                                    className="markdown"
+                                    source={ markdown_result().remain } />
+                            </article>
+                            <div style={{ width: "13%", 'min-height': 0}}>
+                                <Card bodyStyle = {{ padding: '12px'}}>
+                                    <p><a herf="#">开发环境配置</a></p>
+                                    <p><a herf="#">servlet API介绍</a></p>
+                                </Card>
+                                <div></div>
+                            </div>
+                        </div>
+                        </Card>
                     </Layout>
                 </Layout>
             </Layout>

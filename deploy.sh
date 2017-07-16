@@ -1,9 +1,10 @@
 #! /bin/bash
 ROOTDIR=$(dirname $0)
+ROOTDIR=$(realpath "$ROOTDIR")
 cd $ROOTDIR/frontend
 yarn build
 
-cd $ROOTDIR
+cd "$ROOTDIR"
 
-cp -r $ROOTDIR/frontend/build/static/ $ROOTDIR/backend/
-cp $ROOTDIR/frontend/build/index.html $ROOTDIR/backend/templates/
+cp -r "$ROOTDIR/frontend/build/static/" "$ROOTDIR/backend/"
+cp "$ROOTDIR/frontend/build/index.html" "$ROOTDIR/backend/templates/"

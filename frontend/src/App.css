@@ -12,3 +12,20 @@
     margin: 16px 24px 16px 0;
     float: left;
 }
+
+
+.toc {
+    font-size: 14px;
+    list-style: none;
+}
+
+.toc-anchor {
+	  color:#aaa;
+	  font-size:12px;
+}
+.toc-anchor a {
+	  display:block;
+	  overflow:hidden;
+	  text-overflow:ellipsis;
+	  white-space:nowrap;
+}

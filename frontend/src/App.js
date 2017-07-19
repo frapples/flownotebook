@@ -34,6 +34,7 @@ class SiderNoteList extends React.Component {
                 style={{ height: '100%', borderRight: 0 }}
                 onClick={ (e) => { e.item ? this.props.onNoteSelected(parseInt(e.key)) : null  }}
             >
+
             <Input.Search
             placeholder="input search text"
             style={{ width: "92%", "margin-left": "4%"}}
@@ -41,14 +42,18 @@ class SiderNoteList extends React.Component {
             />
                 {
                     this.props.group_struct.map((group, group_key) => (
-                        <SubMenu key={group_key} title={<span><Icon type="user" />{group.name}</span>}>
+                        <SubMenu key={group_key} title={<span><Icon type="folder" />{group.name}</span>}>
                             {
                                 group.children.map((note) => <Menu.Item key={note.key}>{note.name}</Menu.Item>)
                             }
                         </SubMenu>)
                     )
                 }
-            <Icon type="plus" style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
+
+            <Button size="small"
+                    type="dashed"
+                    icon="plus"
+                    style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
             </Menu>
         );
     }
@@ -90,8 +95,83 @@ class WorkSpace extends React.Component {
                         (name, key) => <Menu.Item key={key}>{name}</Menu.Item>
                     )
                 }
-             <Button icon="plus" ghost />
+             <Button icon="plus" style={{ "margin-left": "5px" }} ghost />
             </Menu>
+        );
+    }
+}
+
+class NoteTags extends React.Component {
+    constructor(props) {
+        super();
+        this.state = {
+            inputVisible: false,
+            tags: props.tags.slice(0)
+        }
+    }
+
+    handleInputChange = (e) => {
+    }
+
+    showInput = () => {
+        this.setState({ inputVisible: true }, () => this.input.focus());
+    }
+
+    handleInputConfirm = (e) => {
+        let tags = this.state.tags;
+        let new_tag = e.target.value.trim();
+        if (new_tag) {
+            if (this.state.tags.indexOf(new_tag) < 0) {
+                tags = [...this.state.tags, new_tag];
+            } else {
+                message.info("标签" + new_tag + "已经存在，无需添加。");
+            }
+        }
+        this.setState({
+            inputVisible: false,
+            colors: this.state.colors,
+            tags: tags
+        });
+
+    }
+
+    render() {
+        let colors = ['pink', 'red', 'orange', 'green', 'cyan', 'blue', 'purple'];
+        let i = 0;
+        const next_color = () => colors[(i++) % colors.length];
+
+        return (
+            <Row>
+            <Col>
+            {
+                this.state.tags.map((tag) =>
+                    <div style={{ "padding-top": "3px", "float": "left" }}>
+                        <Tag color={ next_color() } closable>
+                            <span> <Icon type="tag-o" style={{ 'padding-right': '2px' }} />{ tag } </span>
+                        </Tag>
+                    </div>
+                )
+
+            }
+
+                <div style={{ "padding-top": "3px", "float": "left" }}>
+            {
+                this.state.inputVisible ?
+                <Input
+                    ref={ (input) => this.input = input /* 将本组件对象绑定到 this.input 上来 */ }
+                    type="text"
+                    size="small"
+                    style={{ width: 78 }}
+                    onChange={this.handleInputChange}
+                    onBlur={this.handleInputConfirm}
+                    onPressEnter={this.handleInputConfirm}
+                />
+                :
+                <Button size="small" type="dashed" onClick={this.showInput}>+</Button>
+            }
+                </div>
+            </Col>
+            </Row>
         );
     }
 }
@@ -138,6 +218,8 @@ class App extends React.Component {
                 <Timeline.Item>2015-07-01 创建笔记。 </Timeline.Item>
             </Timeline>
         );
+
+        const tags = ['java', 'web', '编程', 'servlet', 'MySQL', 'Tomcat'];
         return (
             <Layout>
                 <Header>
@@ -164,45 +246,37 @@ class App extends React.Component {
 
                     <Layout style={{ padding: '15px 15px 15px' }}>
                         <Card bodyStyle={{ 'padding-top': '5px' }} title = {
-                                <Row>
-                                    <Col span={18}> <div className="markdown" style={{display: 'inline-flex', 'align-items': 'center'}}>
-                                        <h1>{ markdown_result().h1 }</h1>
-                                            <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
-                                        <Popover content={updated_log} title="修改记录">
-                                            <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
-                                        </Popover>
-                                    </div>
-                                    </Col>
-                                    <Col span={4} offset={2}>
-                                        <div style={{ 'padding-top': '5px'}}>
-                                            <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} />
-                                        </div>
-                                    </Col>
-                                </Row>
+                            <Row type="flex" justify="space-between" align="middle">
+                                <Col>
+                                    <h1 style={{ "display": "inline"}}>{ markdown_result().h1 }</h1>
+                                    <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                                    <Popover content={updated_log} title="修改记录">
+                                        <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                                    </Popover>
+                                </Col>
+                                <Col>
+                                    <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} />
+                                </Col>
+                            </Row>
                         } extra={ "" } style={{ }}>
-                        <div style={{ 'padding-bottom': '5px'}}>
-                            <Tag color="pink">pink</Tag>
-                            <Tag color="red">red</Tag>
-                            <Tag color="orange">orange</Tag>
-                            <Tag color="green">green</Tag>
-                            <Tag color="cyan">cyan</Tag>
-                            <Tag color="blue">blue</Tag>
-                            <Tag color="purple">purple</Tag>
-                        </div>
-                        <div style={{ display: 'flex'}}>
-                            <article style={{ "padding-left" : '15px', 'font-size': '15px', 'width': '87%'}}>
-                                <ReactMarkdown
-                                    className="markdown"
-                                    source={ markdown_result().remain } />
-                            </article>
-                            <div style={{ width: "13%", 'min-height': 0}}>
-                                <Card bodyStyle = {{ padding: '12px'}}>
-                                    <p><a herf="#">开发环境配置</a></p>
-                                    <p><a herf="#">servlet API介绍</a></p>
-                                </Card>
-                                <div></div>
+                            <div style={{ 'padding-bottom': '5px'}}>
+                                <NoteTags tags= { tags } />
                             </div>
-                        </div>
+                            <Row>
+                                <Col span={20}>
+                                    <ReactMarkdown
+                                        className="markdown"
+                                        source={ markdown_result().remain } />
+                                </Col>
+                                <Col span={4}>
+                                    <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
+                                        <ul>
+                                            <li><a herf="#">开发环境配置</a></li>
+                                            <li><a herf="#">servlet API介绍</a></li>
+                                        </ul>
+                                    </Card>
+                                </Col>
+                            </Row>
                         </Card>
                     </Layout>
                 </Layout>

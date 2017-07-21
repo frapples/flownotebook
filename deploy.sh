@@ -6,5 +6,5 @@ yarn build
 
 cd "$ROOTDIR"
 
-cp -r "$ROOTDIR/frontend/build/static/" "$ROOTDIR/backend/"
-cp "$ROOTDIR/frontend/build/index.html" "$ROOTDIR/backend/templates/"
+cp -r "$ROOTDIR/frontend/build/static/" "$ROOTDIR/backend/flownotebook/"
+cp "$ROOTDIR/frontend/build/index.html" "$ROOTDIR/backend/flownotebook/templates/"

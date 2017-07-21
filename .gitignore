@@ -108,5 +108,5 @@ jspm_packages/
 
 frontend/build/
 frontend/public/
-backend/static/
+backend/flownotebook/static/
 

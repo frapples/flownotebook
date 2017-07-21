@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from backend import app
+from flownotebook import app
 
 
 def main():

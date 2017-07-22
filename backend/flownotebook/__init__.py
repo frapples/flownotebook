@@ -22,3 +22,6 @@ def create_app():
     app.register_blueprint(notepage.blueprint)
 
     return app
+
+
+app = create_app()

@@ -1,11 +1,10 @@
 #! /usr/bin/env python3
 
-from flownotebook import create_app
+from flownotebook import app
 
 
 def main():
-    app = create_app()
-    app.run(debug=True, use_reloader=False)
+    app.run()
 
 
 if __name__ == '__main__':

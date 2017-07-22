@@ -5,10 +5,10 @@ import flownotebook
 
 class Test:
     def setup(self):
-        app = flownotebook.app
+        app = flownotebook.create_app()
         app.config['TESTING'] = True
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        self.app = flownotebook.app.test_client()
+        self.app = app.test_client()
 
     def test_index(self):
         rv = self.app.get('/')

@@ -95,7 +95,28 @@ class TestNote:
             return True
 
         self.add_categories(self.app, categories)
-        assert cmp(categories, self.get_all_categories(self.app))
+        categories2, id_table = self.get_all_categories(self.app)
+        assert cmp(categories, categories2)
+
+        result = self.add_note(self.app, id_table['AAA'])
+        assert result['success']
+        id = result['id']
+
+        result = self.add_note(self.app, id_table['AA'])
+        assert not result['success']
+
+        result = self.get_note(self.app, id)
+        assert result['success']
+        assert len(result['data']['content']) > 1
+
+        result = self.get_note(self.app, 1023455)
+        assert not result['success']
+
+        result = self.del_note(self.app, id)
+        assert result['success']
+
+        result = self.del_note(self.app, id)
+        assert not result['success']
 
     @staticmethod
     def add_categories(app, categories):
@@ -120,12 +141,40 @@ class TestNote:
             assert result['success']
             return result['data']
 
+        id_table = dict()
+
         def get(id):
             result = dict()
 
             nodes = fetch(id)
             for n in nodes:
                 result[n['name']] = get(n['id'])
+                id_table[n['name']] = n['id']
             return result
 
-        return get(-1)
+        return get(-1), id_table
+
+    @staticmethod
+    def add_note(app, category_id):
+        url = '/json_api/note/note_add'
+
+        content = "# TEST \n ## test1 \n ## test2"
+        rv = app.post(url, data=dict(category_id=category_id,
+                                     type="markdown",
+                                     content=content))
+        result = json.loads(rv.data.decode())
+        return result
+
+    @staticmethod
+    def get_note(app, id):
+        url = '/json_api/note/note_get'
+        rv = app.post(url, data=dict(id=id))
+        result = json.loads(rv.data.decode())
+        return result
+
+    @staticmethod
+    def del_note(app, id):
+        url = '/json_api/note/note_del'
+        rv = app.post(url, data=dict(id=id))
+        result = json.loads(rv.data.decode())
+        return result

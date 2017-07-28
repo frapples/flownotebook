@@ -2,8 +2,7 @@ import flask
 from datetime import timedelta
 from flask.ext.session import Session
 from . import models
-from .blueprints import jsonapi
-from .blueprints import notepage
+from .blueprints import notepage, user, note
 
 sess = Session()
 
@@ -20,7 +19,8 @@ def create_app():
     sess.init_app(app)
     models.init_db(app)
 
-    app.register_blueprint(jsonapi.blueprint, url_prefix='/json_api')
+    app.register_blueprint(user.blueprint, url_prefix='/json_api/user')
+    app.register_blueprint(note.blueprint, url_prefix='/json_api/note')
     app.register_blueprint(notepage.blueprint)
 
     return app

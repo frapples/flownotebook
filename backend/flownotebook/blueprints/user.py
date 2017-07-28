@@ -1,12 +1,14 @@
+import functools
 import flask
 from flask import request, session
 import sqlalchemy
 from ..models import db, User
 
-blueprint = flask.Blueprint('json_api', __name__)
+
+blueprint = flask.Blueprint('api_user', __name__)
 
 
-@blueprint.route("/user/register", methods=["POST"])
+@blueprint.route("/register", methods=["POST"])
 def user_register():
     username = request.form.get('username', "")
     password = request.form.get('password', "")
@@ -21,7 +23,7 @@ def user_register():
         return flask.jsonify(success=False, reason="DATA_ERROR")
 
 
-@blueprint.route("/user/login", methods=["POST"])
+@blueprint.route("/login", methods=["POST"])
 def user_login():
     username = request.form.get('username', "")
     password = request.form.get('password', "")
@@ -37,9 +39,37 @@ def user_login():
         return flask.jsonify(success=False, reason="USERNAME_NOT_EXISTS")
 
 
-@blueprint.route("/user/is_login", methods=["POST"])
+@blueprint.route("/is_login", methods=["POST"])
 def is_login():
     if 'login_user_id' in session:
         return flask.jsonify(is_login=True, login_id=session["login_user_id"])
     else:
         return flask.jsonify(is_login=False)
+
+
+def logined_validation(view_func):
+
+    assert callable(view_func)
+
+    @functools.wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if 'login_user_id' in session:
+            return view_func(*args, **kwargs)
+        else:
+            flask.redirect(flask.url_for("notepage.login"))
+
+    return wrapper
+
+
+def jsonapi_logined_validation(view_func):
+
+    assert callable(view_func)
+
+    @functools.wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if 'login_user_id' in session:
+            return view_func(*args, **kwargs)
+        else:
+            return flask.jsonify(success=False, reason="NO_LOGIN")
+
+    return wrapper

@@ -1,5 +1,8 @@
 from .db import db
+from sqlalchemy import orm
 import enum
+import os.path
+from ..config import DATA_ROOT
 
 
 class Category(db.Model):
@@ -9,7 +12,8 @@ class Category(db.Model):
     name = db.Column(db.String(10), nullable=False)
     level = db.Column(db.SmallInteger, nullable=False)
 
-    parent = db.relationship('Category')
+    children = db.relationship('Category')
+    notes = db.relationship('Note')
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
@@ -17,10 +21,19 @@ class Category(db.Model):
         return '<Category id=%d name=%s user=%s>' % (self.id,
                                                      self.name, self.user.id)
 
+    @classmethod
+    def get_belongs_user(cls, id, user_id):
+        c = cls.query.get(id)
+        if c and c.user_id == user_id:
+            return c
+        else:
+            return None
+
 
 class NoteType(enum.Enum):
     markdown = 1
     scraps = 2
+    codesnippet = 3
 
 
 tags_mark = db.Table(
@@ -35,12 +48,27 @@ class Note(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     note_type = db.Column(db.Enum(NoteType), nullable=False)
-    title = db.Column(db.String(30), nullable=False)
+    title = db.Column(db.String, nullable=False)
     is_trash = db.Column(db.Boolean, default=False, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
 
     tags = db.relationship('Tag', secondary=tags_mark)
     media = db.relationship('MediaReference', lazy='dynamic')
+
+    @property
+    def content(self):
+        with open(self.filepath(), "r", encoding="utf8", newline="\r\n") as f:
+            return f.read()
+
+    @content.setter
+    def set_content(self, content):
+        with open(self.filepath(), "w", encoding="utf8", newline="\r\n") as f:
+            f.write(content)
+
+    def filepath(self):
+        dir_ = os.path.join(DATA_ROOT, str(self.category.user.id))
+        os.makedirs(dir_, exist_ok=True)
+        return os.path.join(dir_, str(self.id) + ".md")
 
 
 class Tag(db.Model):
@@ -60,5 +88,7 @@ class MediaReference(db.Model):
     def __init__(self, tmp_file):
         raise NotImplemented
 
-    def filepath(self):
+    @orm.reconstructor
+    def init_on_load(self):
+        self.filepath = ""
         raise NotImplemented

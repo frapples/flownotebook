@@ -11,7 +11,7 @@ class User(db.Model):
     register_time = db.Column(db.DateTime, nullable=False,
                               default=db.func.now())
 
-    category = db.relationship('Category')
+    categories = db.relationship('Category')
 
     hash_salt_method = "pbkdf2:sha1:10000"
 

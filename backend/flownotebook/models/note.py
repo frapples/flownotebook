@@ -1,5 +1,5 @@
 from .db import db
-from sqlalchemy import orm
+from sqlalchemy import orm, event
 import enum
 import os.path
 from ..config import DATA_ROOT
@@ -13,7 +13,7 @@ class Category(db.Model):
     level = db.Column(db.SmallInteger, nullable=False)
 
     children = db.relationship('Category')
-    notes = db.relationship('Note')
+    notes = db.relationship('Note', backref="category")
     parent_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
@@ -55,20 +55,32 @@ class Note(db.Model):
     tags = db.relationship('Tag', secondary=tags_mark)
     media = db.relationship('MediaReference', lazy='dynamic')
 
-    @property
-    def content(self):
-        with open(self.filepath(), "r", encoding="utf8", newline="\r\n") as f:
-            return f.read()
+    def __init__(self, note_type, title, content=""):
+        self.note_type = note_type
+        self.title = title
+        self.content = content
 
-    @content.setter
-    def set_content(self, content):
+    @orm.reconstructor
+    def init_on_load(self):
+        with open(self.filepath(), "r", encoding="utf8", newline="\r\n") as f:
+            self.content = f.read()
+
+    def write_content(self):
         with open(self.filepath(), "w", encoding="utf8", newline="\r\n") as f:
-            f.write(content)
+            f.write(self.content)
 
     def filepath(self):
-        dir_ = os.path.join(DATA_ROOT, str(self.category.user.id))
+
+        assert self.id
+
+        dir_ = os.path.join(DATA_ROOT, str(self.category.user_id))
         os.makedirs(dir_, exist_ok=True)
         return os.path.join(dir_, str(self.id) + ".md")
+
+
+@event.listens_for(Note, "after_insert")
+def before_insert(mapper, connection, target):
+    target.write_content()
 
 
 class Tag(db.Model):

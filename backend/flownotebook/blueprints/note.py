@@ -64,13 +64,13 @@ def category_del():
     raise NotImplemented
 
 
-@blueprint.route("/get_note", methods=["POST"])
+@blueprint.route("/note_get", methods=["POST"])
 @jsonapi_logined_validation
 def get_note():
     note_id = int(request.form["id"])
     user_id = session['login_user_id']
 
-    note_ = Note.get(note_id)
+    note_ = Note.query.get(note_id)
     if note_ and note_.category.user_id == user_id:
         tags = [t.name for t in note_.tags]
         return jsonify(success=True,
@@ -89,11 +89,11 @@ def note_add():
     category = Category.get_belongs_user(category_id, user_id)
 
     if category and category.level == 3:
-        note = Note(title="TEST", note_type=type_)
+        note = Note(title="TEST", note_type=type_, content=note_content)
         note.category = category
-        note.content = note_content
         db.session.add(note)
         db.session.commit()
+        return jsonify(success=True, id=note.id)
     else:
         return jsonify(success=False, reason="CATEGORY_LEVEL_ERROR")
 
@@ -103,9 +103,10 @@ def note_add():
 def note_del():
     note_id = int(request.form["id"])
     user_id = session['login_user_id']
-    note_ = Note.get(note_id)
+    note_ = Note.query.get(note_id)
     if note_ and note_.category.user_id == user_id:
         db.session.delete(note_)
         db.session.commit()
+        return jsonify(success=True)
     else:
         return jsonify(success=False, reason="NOT_EXISTS")

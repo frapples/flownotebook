@@ -33,7 +33,7 @@ class Category(db.Model):
 class NoteType(enum.Enum):
     markdown = 1
     scraps = 2
-    codesnippet = 3
+    snippet = 3
 
 
 tags_mark = db.Table(

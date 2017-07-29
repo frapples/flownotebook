@@ -1,7 +1,9 @@
 import sys
 import json
 sys.path.append("..")
+import flask
 from flownotebook import app
+from flownotebook.config import NO_LOGIN_PASSWORD, NO_LOGIN_USER_ID
 
 
 class TestUser:
@@ -15,6 +17,10 @@ class TestUser:
         self.user_register(self.app)
         self.user_login(self.app)
         self.is_login(self.app)
+
+        with app.test_client() as c:
+            c.post("/json_api/user/is_login?no_login=" + NO_LOGIN_PASSWORD)
+            assert flask.session['login_user_id'] == NO_LOGIN_USER_ID
 
     @staticmethod
     def user_register(app):

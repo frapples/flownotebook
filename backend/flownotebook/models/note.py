@@ -79,7 +79,7 @@ class Note(db.Model):
 
 
 @event.listens_for(Note, "after_insert")
-def before_insert(mapper, connection, target):
+def after_insert(mapper, connection, target):
     target.write_content()
 
 

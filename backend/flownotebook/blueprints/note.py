@@ -25,7 +25,7 @@ def category_children():
                 data = [dict(name=c.name, id=c.id) for c in data]
             else:
                 data = category.notes
-                data = [dict(title=n.title, note_type=n.note_type, id=n.id)
+                data = [dict(title=n.title, note_type=n.note_type.name, id=n.id)
                         for n in data]
     else:
         data = Category.query.filter_by(user_id=user_id, parent_id=None)

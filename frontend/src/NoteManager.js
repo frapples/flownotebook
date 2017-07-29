@@ -125,16 +125,15 @@ class NoteManager {
     }
 
     get_notebooks = () => {
-        return this.notebooks.map((e) => e.name);
+        return [];
     }
 
     get_workspaces = (notebook_id) => {
-        return this.notebooks[notebook_id].children.map((e => e.name));
+        return [];
     }
 
     get_group_struct = (notebook_id, workspace_id) =>{
-        let workspace = this.notebooks[notebook_id].children[workspace_id];
-        return workspace ? workspace.children : [];
+        return [];
     }
 
     get_note_content = (note_id) => {

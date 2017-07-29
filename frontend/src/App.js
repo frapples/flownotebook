@@ -9,7 +9,7 @@ import ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 
 import NoteManager from './NoteManager.js';
-import { markdown_h1_split } from './utils.js';
+import { markdown_h1_split, fetch_post } from './utils.js';
 
 import 'moment/locale/zh-cn';
 moment.locale('zh-cn');
@@ -41,10 +41,10 @@ class SiderNoteList extends React.Component {
             onSearch={value => console.log(value)}
             />
                 {
-                    this.props.group_struct.map((group, group_key) => (
-                        <SubMenu key={group_key} title={<span><Icon type="folder" />{group.name}</span>}>
+                    this.props.group_notes.map((group) => (
+                        <SubMenu key={group.id} title={<span><Icon type="folder" />{group.name}</span>}>
                             {
-                                group.children.map((note) => <Menu.Item key={note.key}>{note.name}</Menu.Item>)
+                                group.children.map((note) => <Menu.Item key={note.id}>{note.title}</Menu.Item>)
                             }
                         </SubMenu>)
                     )
@@ -61,11 +61,15 @@ class SiderNoteList extends React.Component {
 
 class NoteBookMenu extends React.Component {
     render() {
+        let current = this.props.notebooks.find((b) => this.props.notebook_id == b.id);
+        let current_name = current ? current.name : "";
+
+
         const menu = (
             <Menu onClick={ (e) => this.props.onSelected(parseInt(e.key)) }>
                 {
                     this.props.notebooks.map(
-                        (name, key) => (<Menu.Item key={key} > {name} </Menu.Item>))
+                        (book) => (<Menu.Item key={book.id} > {book.name} </Menu.Item>))
                 }
             </Menu>
         );
@@ -74,7 +78,7 @@ class NoteBookMenu extends React.Component {
                 <div style={{ 'float': 'left', 'margin-right': '10px'}}>
                     <Button type="primary" size="large" ghost>
                         <Icon type="book" />
-                        { this.props.notebooks[this.props.notebook_id] }笔记本
+                        { current_name }笔记本
                     </Button>
                 </div>
             </Dropdown>);
@@ -92,7 +96,7 @@ class WorkSpace extends React.Component {
             style={{ lineHeight: '64px', 'font-size': '14px' }} >
                 {
                     this.props.workspaces.map(
-                        (name, key) => <Menu.Item key={key}>{name}</Menu.Item>
+                        (workspace) => <Menu.Item key={workspace.id}>{workspace.name}</Menu.Item>
                     )
                 }
              <Button icon="plus" style={{ "margin-left": "5px" }} ghost />
@@ -182,25 +186,73 @@ class App extends React.Component {
         workspace_id: 0,
         group_id: 1,
         note_id: 0,
+
+        notebooks: [],
+        workspaces: [],
+        group_notes: []
     }
 
     constructor() {
         super();
         this.note_manager = new NoteManager();
-        this.note_manager.onDataChanged.push(
-            (e) => {
-                this.forceUpdate();
+    }
+
+    fetchCategory = (id, onSuccess) => {
+        fetch_post('/json_api/note/category_children', {'id': id})
+            .then((res) => res.json())
+            .then((result) => {
+                onSuccess(result.data);
             });
     }
 
+    componentDidMount = () => {
+        this.fetchCategory(-1, (notebooks) => {
+            this.setState({'notebooks': notebooks});
+            this.setNotebookId(notebooks[0].id);
+        });
+    }
+
+    setNotebookId = (id) => {
+        this.setState({'notebook_id': id});
+
+        this.fetchCategory(id, (workspaces) => {
+                this.setState({'workspaces': workspaces});
+                this.setWorkspaceId(workspaces[0].id);
+        });
+    }
+
+    setWorkspaceId = (id) => {
+        this.setState({'workspace_id': id});
+
+        let onFetched = (group_notes) => {
+            this.setState({'group_notes': group_notes});
+        }
+
+        this.fetchCategory(id, (groups) => {
+            let func = (i) => {
+                if (i < groups.length) {
+                    this.fetchCategory(groups[i].id, (notes) => {
+                        groups[i].children = notes;
+                        func(i + 1);
+                    });
+                } else {
+                    onFetched(groups);
+                }
+            };
+            func(0);
+        });
+    }
+
     onNotebookChanged = (key) => {
-        this.setState({notebook_id: key, note_id: -1});
-        message.info('选择笔记本' + this.note_manager.get_notebooks()[key]);
+        this.setNotebookId(key);
+
+        let notebook = this.state.notebooks.find((b) => b.id == key);
+        message.info('选择笔记本' + notebook.name);
     }
 
     onWorkspaceChanged = (key) => {
-        this.setState({workspace_id: key, note_id: -1});
-        message.info('选择工作区' + this.note_manager.get_workspaces(this.state.notebook_id)[key]);
+        this.setState({workspace_id: key});
+        message.info('切换工作区');
     }
 
     onNoteChanged = (key) => {
@@ -225,11 +277,11 @@ class App extends React.Component {
                 <Header>
                     {/* <div className="logo" /> */}
                     <NoteBookMenu
-                    notebooks = {this.note_manager.get_notebooks()}
+                    notebooks = {this.state.notebooks}
                     notebook_id = {this.state.notebook_id}
                         onSelected = { this.onNotebookChanged }/>
                     <WorkSpace
-                    workspaces = {this.note_manager.get_workspaces(this.state.notebook_id)}
+                    workspaces = { this.state.workspaces }
                     workspace_id = {this.state.workspace_id}
                         onSelected = { this.onWorkspaceChanged } />
                 </Header>
@@ -239,7 +291,7 @@ class App extends React.Component {
                         <SiderNoteList
                             group_id = {this.state.group_id}
                             note_id = {this.state.note_id}
-                            group_struct = { this.note_manager.get_group_struct(this.state.notebook_id, this.state.workspace_id) }
+                            group_notes = { this.state.group_notes }
                             onNoteSelected = { this.onNoteChanged }
                         />
                     </Sider>

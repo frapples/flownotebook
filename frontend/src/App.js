@@ -189,17 +189,29 @@ class App extends React.Component {
 
         notebooks: [],
         workspaces: [],
-        group_notes: []
+        group_notes: [],
+
+        note_content: "",
+        note_tags: []
     }
 
     constructor() {
         super();
-        this.note_manager = new NoteManager();
     }
 
     fetchCategory = (id, onSuccess) => {
+        let onError = () => message.error('获取数据失败。。。', 5);
         fetch_post('/json_api/note/category_children', {'id': id})
-            .then((res) => res.json())
+            .then((res) => res.json().catch(onError))
+            .then((result) => {
+                onSuccess(result.data);
+            });
+    }
+
+    fetchNote = (id, onSuccess) => {
+        let onError = () => message.error('获取数据失败。。。', 5);
+        fetch_post('/json_api/note/note_get', {id: id})
+            .then((res) => res.json().catch(onError))
             .then((result) => {
                 onSuccess(result.data);
             });
@@ -243,6 +255,13 @@ class App extends React.Component {
         });
     }
 
+    setNoteId = (id) => {
+        this.setState({'note_id': id});
+        this.fetchNote(id, (note) => {
+            this.setState({'note_content': note.content, 'note_tags': note.tags});
+        });
+    };
+
     onNotebookChanged = (key) => {
         this.setNotebookId(key);
 
@@ -256,11 +275,13 @@ class App extends React.Component {
     }
 
     onNoteChanged = (key) => {
-        this.setState({note_id: key});
+        this.setNoteId(key);
     }
 
     render() {
-        const markdown_result = () => markdown_h1_split(this.note_manager.get_note_content(this.state.note_id));
+        let result = markdown_h1_split(this.state.note_content);
+        let h1 = result.h1;
+        let content_remain = result.remain;
 
         const updated_log = (
             <Timeline>
@@ -300,7 +321,7 @@ class App extends React.Component {
                         <Card bodyStyle={{ 'padding-top': '5px' }} title = {
                             <Row type="flex" justify="space-between" align="middle">
                                 <Col>
-                                    <h1 style={{ "display": "inline"}}>{ markdown_result().h1 }</h1>
+                                    <h1 style={{ "display": "inline"}}>{ h1 }</h1>
                                     <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
                                     <Popover content={updated_log} title="修改记录">
                                         <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
@@ -318,7 +339,7 @@ class App extends React.Component {
                                 <Col span={20}>
                                     <ReactMarkdown
                                         className="markdown"
-                                        source={ markdown_result().remain } />
+                                        source={ content_remain } />
                                 </Col>
                                 <Col span={4}>
                                     <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">

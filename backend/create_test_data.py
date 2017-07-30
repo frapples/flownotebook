@@ -34,7 +34,7 @@ def create_test_data(app):
                     for title in notes:
                         title = name + title
                         note = models.Note("markdown",
-                                           title, "* " + title)
+                                           title, "# " + title + "\ntestTESTtest")
                         note.category = third_c
                         models.db.session.add(note)
 

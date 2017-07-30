@@ -47,6 +47,7 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
+    "dev-build": "node scripts/dev-build.js",
     "test": "node scripts/test.js --env=jsdom"
   },
   "jest": {

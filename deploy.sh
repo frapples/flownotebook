@@ -2,7 +2,7 @@
 ROOTDIR=$(dirname $0)
 ROOTDIR=$(realpath "$ROOTDIR")
 cd $ROOTDIR/frontend
-yarn build
+yarn dev-build
 
 cd "$ROOTDIR"
 

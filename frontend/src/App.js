@@ -8,8 +8,8 @@ import moment from 'moment';
 import ReactDOM from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 
-import NoteManager from './NoteManager.js';
-import { markdown_h1_split, fetch_post } from './utils.js';
+import noteManager from './NoteManager.js';
+import { markdown_h1_split } from './utils.js';
 
 import 'moment/locale/zh-cn';
 moment.locale('zh-cn');
@@ -25,23 +25,46 @@ const dateFormat = 'YYYY-MM-DD';
 const monthFormat = 'YYYY-MM';
 
 class SiderNoteList extends React.Component {
+    constructor(props) {
+        super();
+        this.group_notes = [];
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.group_notes = noteManager.getCategory(nextProps.workspace_id, true);
+    }
+
+    findGroupId = (note_id) => {
+        let group = this.group_notes.find((group) => group.children.find((note) => note_id == note.id));
+        return group ? group.id : null;
+    }
+
     render() {
+        const onClick = (e) => {
+            if (e.item) {
+                let id = parseInt(e.key);
+                this.props.onNoteSelected(id);
+            }
+        }
+
+
+        const group_id = this.findGroupId(this.props.note_id);
         return (
             <Menu
                 mode="inline"
-                defaultSelectedKeys={[this.props.note_id.toString(), ]}
-                defaultOpenKeys={[this.props.group_id.toString(), ]}
+                selectedKeys={[this.props.note_id.toString(), ]}
+            defaultOpenKeys = { group_id != null ? [group_id.toString()] : [] }
                 style={{ height: '100%', borderRight: 0 }}
-                onClick={ (e) => { e.item ? this.props.onNoteSelected(parseInt(e.key)) : null  }}
+                onClick={ onClick }
             >
 
-            <Input.Search
+                <Input.Search
             placeholder="input search text"
             style={{ width: "92%", "margin-left": "4%"}}
             onSearch={value => console.log(value)}
-            />
+                />
                 {
-                    this.props.group_notes.map((group) => (
+                    this.group_notes.map((group) => (
                         <SubMenu key={group.id} title={<span><Icon type="folder" />{group.name}</span>}>
                             {
                                 group.children.map((note) => <Menu.Item key={note.id}>{note.title}</Menu.Item>)
@@ -50,56 +73,144 @@ class SiderNoteList extends React.Component {
                     )
                 }
 
-            <Button size="small"
-                    type="dashed"
-                    icon="plus"
-                    style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
+                <Button size="small"
+                        type="dashed"
+                        icon="plus"
+                        style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
             </Menu>
         );
     }
 }
 
 class NoteBookMenu extends React.Component {
-    render() {
-        let current = this.props.notebooks.find((b) => this.props.notebook_id == b.id);
-        let current_name = current ? current.name : "";
+    constructor(props) {
+        super();
+        this.notebooks = [];
+    }
 
+    componentWillReceiveProps = (nextProps) => {
+        this.notebooks = noteManager.getCategory(-1);
+    }
+
+    currentName = () => {
+        let id = this.props.notebook_id;
+        let current = this.notebooks.find((b) => id == b.id);
+        let current_name = current ? current.name : "";
+        return current_name;
+    }
+
+    render() {
+        const onSelect = (e) => {
+            let id = parseInt(e.key);
+            this.props.onSelected(id);
+        }
 
         const menu = (
-            <Menu onClick={ (e) => this.props.onSelected(parseInt(e.key)) }>
+            <Menu onClick={ onSelect }
+                defaultSelectedKeys = { [this.props.notebook_id.toString()] }
+                selectedKeys = { [this.props.notebook_id.toString()] }
+            >
                 {
-                    this.props.notebooks.map(
+                    this.notebooks.map(
                         (book) => (<Menu.Item key={book.id} > {book.name} </Menu.Item>))
                 }
             </Menu>
         );
 
         return (<Dropdown overlay={menu} >
-                <div style={{ 'float': 'left', 'margin-right': '10px'}}>
-                    <Button type="primary" size="large" ghost>
-                        <Icon type="book" />
-                        { current_name }笔记本
-                    </Button>
-                </div>
-            </Dropdown>);
+            <div style={{ 'float': 'left', 'margin-right': '10px'}}>
+                <Button type="primary" size="large" ghost>
+                    <Icon type="book" />
+                    { this.currentName() }笔记本
+                </Button>
+            </div>
+        </Dropdown>);
     }
 }
 
 class WorkSpace extends React.Component {
+    constructor(props) {
+        super();
+        this.workspaces = [];
+        this.notebooks = [];
+        this.state = {
+            inputVisible: false,
+        };
+
+        this.updateData(props.notebook_id);
+    }
+
+    componentWillReceiveProps = (nextProps) => {
+        this.updateData(nextProps.notebook_id);
+    }
+
+    updateData = (notebook_id) => {
+        this.notebooks = noteManager.getCategory(-1);
+        this.workspaces = noteManager.getCategory(notebook_id);
+    }
+
     render() {
+        const onSelect = (e) => {
+            if (e.item) {
+                let id = parseInt(e.key);
+                this.props.onSelected(parseInt(id));
+            }
+        }
+
+        const onClick = (e) => {
+            if (e.item) {
+                if (e.key == "add") {
+                    this.setState({ inputVisible: true }, () => this.refs.input.focus());
+                }
+            }
+        }
+
         return (
             <Menu
-            theme="dark"
-            mode="horizontal"
-            defaultSelectedKeys={[this.props.workspace_id.toString()]}
-                onSelect={ (e) => this.props.onSelected(parseInt(e.key)) }
-            style={{ lineHeight: '64px', 'font-size': '14px' }} >
+                theme="dark"
+                mode="horizontal"
+                defaultSelectedKeys={[this.props.workspace_id.toString()]}
+            selectedKeys = {[this.props.workspace_id.toString()]}
+                onSelect={ onSelect  }
+                style={{ lineHeight: '64px', 'font-size': '14px' }} >
                 {
-                    this.props.workspaces.map(
-                        (workspace) => <Menu.Item key={workspace.id}>{workspace.name}</Menu.Item>
-                    )
+                    this.workspaces.map(
+                        (workspace) => <Menu.Item key={workspace.id}> {workspace.name} </Menu.Item>)
                 }
-             <Button icon="plus" style={{ "margin-left": "5px" }} ghost />
+                <Button.Group>
+                    <div style={{ 'margin-left': "10px" }} >
+                        {
+                            this.state.inputVisible ?
+                            <Input
+                                ref="input"
+                                type="text"
+                                size="small"
+                                style={{ width: 78 }}
+                                onChange={this.handleInputChange}
+                                onBlur={ () => this.setState({'inputVisible': false}) }
+                                onPressEnter={this.handleInputConfirm }/ >
+                            :
+                            <Dropdown overlay={
+                                <Menu onClick={onClick}
+                                    style={{ width: 70 }}
+                                    >
+                                    <Menu.Item key="add"><Icon type="plus" />添加</Menu.Item>
+                                    <Menu.Item key="delete"><Icon type="delete" />删除</Menu.Item>
+                                    <SubMenu key="sub1" title={<span>移动到</span>}>
+                                        {
+                                            this.notebooks.map((notebook) => (
+                                                <Menu.Item key={notebook.id}>{notebook.name}</Menu.Item>))
+                                        }
+                                    </SubMenu>
+
+                                </Menu>
+                            }>
+                                <Button size="small" icon="menu-unfold" ghost />
+                            </Dropdown>
+                        }
+
+                    </div>
+                </Button.Group>
             </Menu>
         );
     }
@@ -146,139 +257,63 @@ class NoteTags extends React.Component {
 
         return (
             <Row>
-            <Col>
-            {
-                this.state.tags.map((tag) =>
+                <Col>
+                    {
+                        this.state.tags.map((tag) =>
+                            <div style={{ "padding-top": "3px", "float": "left" }}>
+                                <Tag color={ next_color() } closable>
+                                    <span> <Icon type="tag-o" style={{ 'padding-right': '2px' }} />{ tag } </span>
+                                </Tag>
+                            </div>
+                        )
+
+                    }
+
                     <div style={{ "padding-top": "3px", "float": "left" }}>
-                        <Tag color={ next_color() } closable>
-                            <span> <Icon type="tag-o" style={{ 'padding-right': '2px' }} />{ tag } </span>
-                        </Tag>
+                        {
+                            this.state.inputVisible ?
+                            <Input
+                                ref={ (input) => this.input = input /* 将本组件对象绑定到 this.input 上来 */ }
+                                type="text"
+                                size="small"
+                                style={{ width: 78 }}
+                                onChange={this.handleInputChange}
+                                onBlur={this.handleInputConfirm}
+                                onPressEnter={this.handleInputConfirm}
+                            />
+                            :
+                            <Button size="small" type="dashed" onClick={this.showInput}>+</Button>
+                        }
                     </div>
-                )
-
-            }
-
-                <div style={{ "padding-top": "3px", "float": "left" }}>
-            {
-                this.state.inputVisible ?
-                <Input
-                    ref={ (input) => this.input = input /* 将本组件对象绑定到 this.input 上来 */ }
-                    type="text"
-                    size="small"
-                    style={{ width: 78 }}
-                    onChange={this.handleInputChange}
-                    onBlur={this.handleInputConfirm}
-                    onPressEnter={this.handleInputConfirm}
-                />
-                :
-                <Button size="small" type="dashed" onClick={this.showInput}>+</Button>
-            }
-                </div>
-            </Col>
+                </Col>
             </Row>
         );
     }
 }
 
-class App extends React.Component {
+class Note extends React.Component {
     state = {
-        notebook_id: 0,
-        workspace_id: 0,
-        group_id: 1,
-        note_id: 0,
-
-        notebooks: [],
-        workspaces: [],
-        group_notes: [],
-
-        note_content: "",
+        note_content: '',
         note_tags: []
     }
 
-    constructor() {
+    constructor(props) {
         super();
+        this.updateData(props.note_id);
     }
 
-    fetchCategory = (id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
-        fetch_post('/json_api/note/category_children', {'id': id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                onSuccess(result.data);
-            });
+    componentWillReceiveProps (nextProps) {
+        this.updateData(nextProps.note_id);
     }
 
-    fetchNote = (id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
-        fetch_post('/json_api/note/note_get', {id: id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                onSuccess(result.data);
-            });
-    }
-
-    componentDidMount = () => {
-        this.fetchCategory(-1, (notebooks) => {
-            this.setState({'notebooks': notebooks});
-            this.setNotebookId(notebooks[0].id);
-        });
-    }
-
-    setNotebookId = (id) => {
-        this.setState({'notebook_id': id});
-
-        this.fetchCategory(id, (workspaces) => {
-                this.setState({'workspaces': workspaces});
-                this.setWorkspaceId(workspaces[0].id);
-        });
-    }
-
-    setWorkspaceId = (id) => {
-        this.setState({'workspace_id': id});
-
-        let onFetched = (group_notes) => {
-            this.setState({'group_notes': group_notes});
-        }
-
-        this.fetchCategory(id, (groups) => {
-            let func = (i) => {
-                if (i < groups.length) {
-                    this.fetchCategory(groups[i].id, (notes) => {
-                        groups[i].children = notes;
-                        func(i + 1);
-                    });
-                } else {
-                    onFetched(groups);
-                }
-            };
-            func(0);
-        });
-    }
-
-    setNoteId = (id) => {
-        this.setState({'note_id': id});
-        this.fetchNote(id, (note) => {
+    updateData = (id) => {
+        noteManager.fetchNote(id, (note) => {
             this.setState({'note_content': note.content, 'note_tags': note.tags});
         });
-    };
-
-    onNotebookChanged = (key) => {
-        this.setNotebookId(key);
-
-        let notebook = this.state.notebooks.find((b) => b.id == key);
-        message.info('选择笔记本' + notebook.name);
-    }
-
-    onWorkspaceChanged = (key) => {
-        this.setState({workspace_id: key});
-        message.info('切换工作区');
-    }
-
-    onNoteChanged = (key) => {
-        this.setNoteId(key);
     }
 
     render() {
+        const tags = ['java', 'web', '编程', 'servlet', 'MySQL', 'Tomcat'];
         let result = markdown_h1_split(this.state.note_content);
         let h1 = result.h1;
         let content_remain = result.remain;
@@ -292,65 +327,97 @@ class App extends React.Component {
             </Timeline>
         );
 
-        const tags = ['java', 'web', '编程', 'servlet', 'MySQL', 'Tomcat'];
+        return (
+            <Card bodyStyle={{ 'padding-top': '5px' }} title = {
+                <Row type="flex" justify="space-between" align="middle">
+                    <Col>
+                        <h1 style={{ "display": "inline"}}>{ h1 }</h1>
+                        <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                        <Popover content={updated_log} title="修改记录">
+                            <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                        </Popover>
+                    </Col>
+                    <Col>
+                        <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} />
+                    </Col>
+                </Row>
+            } extra={ "" } style={{ }}>
+            <div style={{ 'padding-bottom': '5px'}}>
+                <NoteTags tags= { tags } />
+            </div>
+            <Row>
+                <Col span={20}>
+                    <ReactMarkdown
+                        className="markdown"
+                        source={ content_remain } />
+                </Col>
+                <Col span={4}>
+                    <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
+                        <ul>
+                            <li><a herf="#">开发环境配置</a></li>
+                            <li><a herf="#">servlet API介绍</a></li>
+                        </ul>
+                    </Card>
+                </Col>
+            </Row>
+            </Card>
+        );
+    }
+}
+class App extends React.Component {
+    state = {
+        notebook_id: 0,
+        workspace_id: 0,
+        note_id: 0
+    }
+
+    constructor() {
+        super();
+        noteManager.initTree((tree) => {
+            this.setState({
+                'notebook_id': tree[0].id,
+                'workspace_id':tree[0].children[0].id,
+                'note_id':tree[0].children[0].children[0].children[0].id
+            });
+        });
+    }
+
+    onNotebookChanged = (key) => {
+        this.setState({'notebook_id': key});
+    }
+
+    onWorkspaceChanged = (key) => {
+        this.setState({'workspace_id': key});
+        message.info('切换工作区');
+    }
+
+    onNoteChanged = (key) => {
+        this.setState({'note_id': key});
+    }
+
+    render() {
         return (
             <Layout>
                 <Header>
                     {/* <div className="logo" /> */}
-                    <NoteBookMenu
-                    notebooks = {this.state.notebooks}
-                    notebook_id = {this.state.notebook_id}
-                        onSelected = { this.onNotebookChanged }/>
-                    <WorkSpace
-                    workspaces = { this.state.workspaces }
-                    workspace_id = {this.state.workspace_id}
-                        onSelected = { this.onWorkspaceChanged } />
+                    <NoteBookMenu ref="notebook"
+                                  notebook_id={this.state.notebook_id}
+                                  onSelected = { this.onNotebookChanged }/>
+                    <WorkSpace ref="workspace"
+                               notebook_id = {this.state.notebook_id }
+                               workspace_id = {this.state.workspace_id }
+                               onSelected = { this.onWorkspaceChanged } />
                 </Header>
 
                 <Layout>
                     <Sider width={200} style={{ background: '#fff' }}>
-                        <SiderNoteList
-                            group_id = {this.state.group_id}
-                            note_id = {this.state.note_id}
-                            group_notes = { this.state.group_notes }
-                            onNoteSelected = { this.onNoteChanged }
-                        />
+                        <SiderNoteList ref="sidernotelist" workspace_id = {this.state.workspace_id}
+                                       note_id = {this.state.note_id}
+                                       onNoteSelected = { this.onNoteChanged } />
                     </Sider>
 
                     <Layout style={{ padding: '15px 15px 15px' }}>
-                        <Card bodyStyle={{ 'padding-top': '5px' }} title = {
-                            <Row type="flex" justify="space-between" align="middle">
-                                <Col>
-                                    <h1 style={{ "display": "inline"}}>{ h1 }</h1>
-                                    <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
-                                    <Popover content={updated_log} title="修改记录">
-                                        <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
-                                    </Popover>
-                                </Col>
-                                <Col>
-                                    <DatePicker defaultValue={moment('2017-01-01', dateFormat)} format={dateFormat} />
-                                </Col>
-                            </Row>
-                        } extra={ "" } style={{ }}>
-                            <div style={{ 'padding-bottom': '5px'}}>
-                                <NoteTags tags= { tags } />
-                            </div>
-                            <Row>
-                                <Col span={20}>
-                                    <ReactMarkdown
-                                        className="markdown"
-                                        source={ content_remain } />
-                                </Col>
-                                <Col span={4}>
-                                    <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
-                                        <ul>
-                                            <li><a herf="#">开发环境配置</a></li>
-                                            <li><a herf="#">servlet API介绍</a></li>
-                                        </ul>
-                                    </Card>
-                                </Col>
-                            </Row>
-                        </Card>
+                        <Note ref="note" note_id = {this.state.note_id} />
                     </Layout>
                 </Layout>
             </Layout>

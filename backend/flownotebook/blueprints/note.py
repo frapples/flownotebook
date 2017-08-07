@@ -34,6 +34,28 @@ def category_children():
     return jsonify(success=True, data=data)
 
 
+@blueprint.route("/category_tree", methods=["POST"])
+@jsonapi_logined_validation
+def category_tree():
+    user_id = session['login_user_id']
+
+    def get_category(id, deep):
+        if deep < 3:
+            categorys = Category.query.filter_by(user_id=user_id, parent_id=id)
+            categorys = [dict(name=c.name, id=c.id) for c in categorys]
+
+            for item in categorys:
+                item['children'] = get_category(item['id'], deep + 1)
+            return categorys
+        elif deep == 3:
+            notes = Note.query.filter_by(category_id=id)
+            notes = [dict(title=n.title, note_type=n.note_type.name, id=n.id)
+                     for n in notes]
+            return notes
+
+    return jsonify(success=True, data=get_category(None, 0))
+
+
 @blueprint.route("/category_add", methods=["POST"])
 @jsonapi_logined_validation
 def category_add():

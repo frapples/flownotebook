@@ -7,21 +7,6 @@ class NoteManager {
         this.tree_cache = [];
     }
 
-    defaultIdPath = () => {
-        let path = [];
-
-        let id = -1;
-        while (true) {
-            let nodes = this.getCategory(-1);
-            if (nodes.length > 0) {
-                id = nodes[0].id;
-                path.push(id);
-            } else {
-                break;
-            }
-        }
-    }
-
     getCategory = (id, include_children) => {
         if (!(id in this.category_cache)) {
             return [];

@@ -368,31 +368,68 @@ class App extends React.Component {
     state = {
         notebook_id: 0,
         workspace_id: 0,
-        note_id: 0
+        note_id: 0,
+
+        loading: true
     }
 
     constructor() {
         super();
-        noteManager.initTree((tree) => {
-            this.setState({
-                'notebook_id': tree[0].id,
-                'workspace_id':tree[0].children[0].id,
-                'note_id':tree[0].children[0].children[0].children[0].id
+
+        this.defaultSelectedWorkspace = {};
+        this.defaultSelectedNote = {};
+
+        const initDefaultSelected = (tree) => {
+            tree.forEach((notebook) => {
+                if (notebook.children.length > 0) {
+                    this.defaultSelectedWorkspace[notebook.id] = notebook.children[0].id;
+                } else {
+                    this.defaultSelectedWorkspace[notebook.id] = null;
+                }
+
+                notebook.children.forEach((workspace) => {
+                    this.defaultSelectedNote[workspace.id] = null;
+                    workspace.children.forEach((group) => {
+                        if (group.children.length > 0 && this.defaultSelectedNote[workspace.id] == null) {
+                            this.defaultSelectedNote[workspace.id] = group.children[0].id;
+                        }
+                    })
+                })
             });
+        };
+
+        noteManager.initTree((tree) => {
+            initDefaultSelected(tree);
+            let defaultNotebookId = tree[0].id;
+            this.setState({
+                'notebook_id': defaultNotebookId,
+                'workspace_id': this.defaultSelectedWorkspace[defaultNotebookId],
+                'note_id': this.defaultSelectedNote[this.defaultSelectedWorkspace[defaultNotebookId]],
+                'loading': false
+            });
+        });
+
+    }
+
+    onNotebookChanged = (id) => {
+        this.setState({'notebook_id': id,
+                       'workspace_id': this.defaultSelectedWorkspace[id],
+                       'note_id': this.defaultSelectedNote[this.defaultSelectedWorkspace[id]],
         });
     }
 
-    onNotebookChanged = (key) => {
-        this.setState({'notebook_id': key});
+    onWorkspaceChanged = (id) => {
+        this.defaultSelectedWorkspace[this.state.notebook_id] = id;
+        this.setState({'workspace_id': id,
+                       'note_id': this.defaultSelectedNote[id]
+        });
+
+        /* message.info('切换工作区');*/
     }
 
-    onWorkspaceChanged = (key) => {
-        this.setState({'workspace_id': key});
-        message.info('切换工作区');
-    }
-
-    onNoteChanged = (key) => {
-        this.setState({'note_id': key});
+    onNoteChanged = (id) => {
+        this.defaultSelectedNote[this.state.workspace_id] = id;
+        this.setState({'note_id': id});
     }
 
     render() {

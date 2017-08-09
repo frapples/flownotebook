@@ -1,6 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
-import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card, Popconfirm, Spin } from 'antd';
+import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card, Popconfirm, Spin, Alert } from 'antd';
 import './App.css';
 import './markdown.css';
 import moment from 'moment';
@@ -264,6 +264,7 @@ class WorkSpaceOperateDropdown extends React.Component {
 }
 
 class NoteTags extends React.Component {
+
     constructor(props) {
         super();
         this.state = {
@@ -272,6 +273,9 @@ class NoteTags extends React.Component {
         }
     }
 
+    componentWillReceiveProps(nextProps) {
+        this.setState({tags: nextProps.tags.slice(0)});
+    }
     handleInputChange = (e) => {
     }
 
@@ -280,21 +284,19 @@ class NoteTags extends React.Component {
     }
 
     handleInputConfirm = (e) => {
-        let tags = this.state.tags;
         let new_tag = e.target.value.trim();
-        if (new_tag) {
-            if (this.state.tags.indexOf(new_tag) < 0) {
-                tags = [...this.state.tags, new_tag];
-            } else {
-                message.info("标签" + new_tag + "已经存在，无需添加。");
-            }
+        if (new_tag != "" && this.props.tags.indexOf(new_tag) >= 0) {
+            message.info("标签" + new_tag + "已经存在，无需添加。");
+        } else {
+            this.setState({tags: [... this.state.tags, new_tag]});
         }
-        this.setState({
-            inputVisible: false,
-            colors: this.state.colors,
-            tags: tags
-        });
+        this.setState({inputVisible: false});
+    }
 
+    handleClose = (removedTag) => {
+        const tags = this.state.tags.filter(tag => tag !== removedTag);
+        message.info("移除标签" + removedTag);
+        this.setState({ tags: tags });
     }
 
     render() {
@@ -308,7 +310,7 @@ class NoteTags extends React.Component {
                     {
                         this.state.tags.map((tag) =>
                             <div style={{ "padding-top": "3px", "float": "left" }}>
-                                <Tag color={ next_color() } closable>
+                                <Tag color={ next_color() } closable afterClose={() => this.handleClose(tag)} >
                                     <span> <Icon type="tag-o" style={{ 'padding-right': '2px' }} />{ tag } </span>
                                 </Tag>
                             </div>
@@ -329,7 +331,7 @@ class NoteTags extends React.Component {
                                 onPressEnter={this.handleInputConfirm}
                             />
                             :
-                            <Button size="small" type="dashed" onClick={this.showInput}>+</Button>
+                            <Button size="small" type="dashed" onClick={this.showInput} disabled={this.props.note_id == null}>+</Button>
                         }
                     </div>
                 </Col>
@@ -341,12 +343,12 @@ class NoteTags extends React.Component {
 class Note extends React.Component {
     state = {
         note_content: '',
-        note_tags: [],
         loading: true
     }
 
     constructor(props) {
         super();
+        this.note_tags = [];
         this.updateData(props.note_id);
     }
 
@@ -355,17 +357,21 @@ class Note extends React.Component {
     }
 
     updateData = (id) => {
-        this.setState({'loading': true});
-        if (id != null) {
-            noteManager.fetchNote(id, (note) => {
-                this.setState({'note_content': note.content, 'note_tags': note.tags});
-                this.setState({'loading': false});
-            });
+        if (id == null) {
+            this.note_tags = [];
+            this.setState({'note_content': ''});
+        } else {
+            this.setState({'loading': true});
+            if (id != null) {
+                noteManager.fetchNote(id, (note) => {
+                    this.note_tags = note.tags;
+                    this.setState({'note_content': note.content, loading: false});
+                });
+            }
         }
     }
 
     render() {
-        const tags = ['java', 'web', '编程', 'servlet', 'MySQL', 'Tomcat'];
         let result = markdown_h1_split(this.state.note_content);
         let h1 = result.h1;
         let content_remain = result.remain;
@@ -396,13 +402,23 @@ class Note extends React.Component {
                 </Row>
             } extra={ "" } style={{ }}>
             <div style={{ 'padding-bottom': '5px'}}>
-                <NoteTags tags= { tags } />
+                <NoteTags tags= { this.note_tags } note_id = {this.props.note_id} />
             </div>
             <Row>
                 <Col span={20}>
-                    <ReactMarkdown
-                        className="markdown"
-                        source={ content_remain } />
+                    {
+                        this.props.note_id == null ?
+                        <Alert
+                            message="未选择笔记..."
+                            description="在左侧的笔记列表中选择一个笔记"
+                            type="info"
+                            showIcon
+                        />
+                        :
+                        <ReactMarkdown
+                            className="markdown"
+                            source={ content_remain } />
+                    }
                 </Col>
                 <Col span={4}>
                     <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
@@ -414,7 +430,7 @@ class Note extends React.Component {
                 </Col>
             </Row>
             </Card>
-                </Spin>
+            </Spin>
         );
     }
 }

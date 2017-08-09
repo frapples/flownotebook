@@ -83,6 +83,38 @@ def category_add():
 @blueprint.route("/category_del", methods=["POST"])
 @jsonapi_logined_validation
 def category_del():
+    id = int(request.form["id"])
+    user_id = session['login_user_id']
+    category = Category.get_belongs_user(id, user_id)
+    if category is None:
+        return jsonify(success=False, reason="NOT EXISTS")
+
+    def del_(node):
+        if node.level < 3:
+            for n in node.children:
+                del_(n)
+            db.session.delete(node)
+        else:
+            for n in node.notes:
+                db.session.delete(n)
+
+    del_(category)
+    db.session.commit()
+    return jsonify(success=True)
+
+
+@blueprint.route("/category_move", methods=["POST"])
+@jsonapi_logined_validation
+def category_move():
+    new_parent_id = int(request.form["new_parent_id"])
+    id = int(request.form["id"])
+    user_id = session['login_user_id']
+
+    category = Category.get_belongs_user(id, user_id)
+    new_parent = Category.get_belongs_user(new_parent_id, user_id)
+    if category is None or new_parent is None:
+        return jsonify(success=False, reason="NOT EXISTS")
+
     raise NotImplemented
 
 

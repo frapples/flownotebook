@@ -1,6 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
-import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card } from 'antd';
+import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card, Popconfirm } from 'antd';
 import './App.css';
 import './markdown.css';
 import moment from 'moment';
@@ -52,8 +52,8 @@ class SiderNoteList extends React.Component {
         return (
             <Menu
                 mode="inline"
-                selectedKeys={[this.props.note_id.toString(), ]}
-            defaultOpenKeys = { group_id != null ? [group_id.toString()] : [] }
+                selectedKeys = { this.props.note_id == null ? [] : [this.props.note_id.toString()]}
+                defaultOpenKeys = { group_id != null ? [group_id.toString()] : [] }
                 style={{ height: '100%', borderRight: 0 }}
                 onClick={ onClick }
             >
@@ -133,9 +133,6 @@ class WorkSpace extends React.Component {
         super();
         this.workspaces = [];
         this.notebooks = [];
-        this.state = {
-            inputVisible: false,
-        };
 
         this.updateData(props.notebook_id);
     }
@@ -149,6 +146,27 @@ class WorkSpace extends React.Component {
         this.workspaces = noteManager.getCategory(notebook_id);
     }
 
+    onAdd = (name) => {
+        message.info("添加工作区" + name);
+        noteManager.addCategory(name, this.props.notebook_id, (id) => {
+            this.updateData(this.props.notebook_id);
+            this.forceUpdate();
+        });
+    }
+
+    onDelete = () => {
+        message.info("删除工作区" + this.props.workspace_id);
+        noteManager.delCategory(this.props.notebook_id, this.props.workspace_id,
+                                () => {
+                                    this.updateData(this.props.notebook_id);
+                                    this.forceUpdate();
+                                });
+    }
+
+    onMove = (notebook_id) => {
+        message.info("移动" + this.props.workspace_id + "到" + notebook_id);
+    }
+
     render() {
         const onSelect = (e) => {
             if (e.item) {
@@ -157,62 +175,91 @@ class WorkSpace extends React.Component {
             }
         }
 
+        return (
+            <Menu
+            theme="dark"
+            mode="horizontal"
+            defaultSelectedKeys={[this.props.workspace_id.toString()]}
+            selectedKeys = { this.props.workspace_id == null ? [] : [this.props.workspace_id.toString()]}
+            onSelect={ onSelect  }
+            style={{ lineHeight: '64px', 'font-size': '14px' }} >
+            {
+                this.workspaces.map(
+                    (workspace) => <Menu.Item key={workspace.id}> {workspace.name} </Menu.Item>)
+            }
+                <WorkSpaceOperateDropdown notebooks={this.notebooks}
+                                          onAdd = {this.onAdd}
+                                          onDelete = {this.onDelete}
+                                          onMove = {this.onMove}
+                                          empty = {this.workspaces.length == 0}
+                                          style={{ 'margin-left': "10px" }} />
+            </Menu>
+        );
+    }
+}
+
+class WorkSpaceOperateDropdown extends React.Component {
+    state = {
+        inputVisible: false,
+    }
+
+    handleInputConfirm = (e) => {
+        this.props.onAdd(e.target.value);
+        this.setState({inputVisible: false});
+    }
+
+    render() {
         const onClick = (e) => {
             if (e.item) {
                 if (e.key == "add") {
                     this.setState({ inputVisible: true }, () => this.refs.input.focus());
+                } else if (e.key == 'delete') {
+                    /* this.props.onDelete();*/
+                } else {
+                    this.props.onMove(parseInt(e.key));
                 }
             }
         }
 
         return (
-            <Menu
-                theme="dark"
-                mode="horizontal"
-                defaultSelectedKeys={[this.props.workspace_id.toString()]}
-            selectedKeys = {[this.props.workspace_id.toString()]}
-                onSelect={ onSelect  }
-                style={{ lineHeight: '64px', 'font-size': '14px' }} >
-                {
-                    this.workspaces.map(
-                        (workspace) => <Menu.Item key={workspace.id}> {workspace.name} </Menu.Item>)
-                }
-                <Button.Group>
-                    <div style={{ 'margin-left': "10px" }} >
-                        {
-                            this.state.inputVisible ?
-                            <Input
-                                ref="input"
-                                type="text"
-                                size="small"
-                                style={{ width: 78 }}
-                                onChange={this.handleInputChange}
-                                onBlur={ () => this.setState({'inputVisible': false}) }
-                                onPressEnter={this.handleInputConfirm }/ >
-                            :
-                            <Dropdown overlay={
-                                <Menu onClick={onClick}
-                                    style={{ width: 70 }}
-                                    >
-                                    <Menu.Item key="add"><Icon type="plus" />添加</Menu.Item>
-                                    <Menu.Item key="delete"><Icon type="delete" />删除</Menu.Item>
-                                    <SubMenu key="sub1" title={<span>移动到</span>}>
-                                        {
-                                            this.notebooks.map((notebook) => (
-                                                <Menu.Item key={notebook.id}>{notebook.name}</Menu.Item>))
-                                        }
-                                    </SubMenu>
+            <Button.Group style={ this.props.style }>
+            {
+                this.state.inputVisible ?
+                <Input
+                    ref="input"
+                    type="text"
+                    size="small"
+                    style={{ width: 78 }}
+                    onChange={this.handleInputChange }
+                    onBlur={ () => this.setState({'inputVisible': false}) }
+                    onPressEnter={this.handleInputConfirm }/ >
+                :
+                <Dropdown overlay={
 
-                                </Menu>
-                            }>
-                                <Button size="small" icon="menu-unfold" ghost />
-                            </Dropdown>
-                        }
+                    <Menu onClick={onClick} style={{ width: 70 }} selectedKeys={[]} >
 
-                    </div>
-                </Button.Group>
-            </Menu>
-        );
+                        <Menu.Item key="add"><Icon type="plus" />添加</Menu.Item>
+                        <Menu.Item key="delete" disabled={this.props.empty ? true : false}>
+                            <Popconfirm title="确认删除?" okText="是" cancelText="否" onConfirm={ this.props.onDelete }>
+                                <div>
+                                    <Icon type="delete" />
+                                    删除
+                                </div>
+                            </Popconfirm>
+                        </Menu.Item>
+
+                        <SubMenu key="sub1" disabled={this.props.empty ? true : false} title={<span>移动到</span>}>
+                            {
+                                this.props.notebooks.map((notebook) => (
+                                    <Menu.Item key={notebook.id}>{notebook.name}</Menu.Item>))
+                            }
+                        </SubMenu>
+                    </Menu>
+
+                }>
+                    <Button size="small" icon="menu-unfold" ghost />
+                </Dropdown>
+            } </Button.Group>);
     }
 }
 
@@ -307,9 +354,11 @@ class Note extends React.Component {
     }
 
     updateData = (id) => {
-        noteManager.fetchNote(id, (note) => {
-            this.setState({'note_content': note.content, 'note_tags': note.tags});
-        });
+        if (id != null) {
+            noteManager.fetchNote(id, (note) => {
+                this.setState({'note_content': note.content, 'note_tags': note.tags});
+            });
+        }
     }
 
     render() {

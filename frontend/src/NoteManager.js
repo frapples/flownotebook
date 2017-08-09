@@ -12,7 +12,7 @@ class NoteManager {
             return [];
         }
 
-        let nodes = this.category_cache[id].slice(0);
+        let nodes = this.category_cache[id].children.slice(0);
         if (!include_children) {
             nodes = nodes.map((node) => Object.assign({}, node, {'children': undefined}));
         }
@@ -47,20 +47,50 @@ class NoteManager {
             });
     };
 
-    initTree = (onSuccess) => {
-
-        const cache = (id, children_nodes) => {
-            this.category_cache[id] = children_nodes;
-            children_nodes.map((node) => {
-                if ('children' in node) {
-                    cache(node.id, node.children);
+    addCategory = (name, parent_id, onSuccess) => {
+        let onError = () => message.error('获取数据失败。。。', 5);
+        fetch_post('/json_api/note/category_add', {name: name, parent_id: parent_id})
+            .then((res) => res.json().catch(onError))
+            .then((result) => {
+                if (result.success) {
+                    this.category_cache[result.id] = {name: name, id: result.id, children: []};
+                    this.category_cache[parent_id].children.push(this.category_cache[result.id]);
+                    onSuccess(result.id);
+                } else {
+                    onError();
                 }
             });
+
+    };
+
+    delCategory = (parent_id, id, onSuccess) => {
+        let onError = () => message.error('获取数据失败。。。', 5);
+        fetch_post('/json_api/note/category_del', {id: id})
+            .then((res) => res.json().catch(onError))
+            .then((result) => {
+                if (result.success) {
+                    let children = this.category_cache[parent_id].children;
+                    children.splice(children.indexOf(this.category_cache[id]), 1);
+                    this.category_cache[id] = undefined;
+                    onSuccess();
+                } else {
+                    onError();
+                }
+            });
+    }
+
+    initTree = (onSuccess) => {
+
+        const cache = (node) => {
+            if ('children' in node) {
+                this.category_cache[node.id] = node;
+                node.children.forEach((subnode) => cache(subnode));
+            }
         };
 
         this.fetchTree((tree) => {
             this.tree_cache = tree;
-            cache(-1, tree);
+            cache({id: -1, name: "", children: tree});
             onSuccess(tree);
         });
     }

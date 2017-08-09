@@ -1,6 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
-import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card, Popconfirm } from 'antd';
+import { Layout, Menu, Dropdown, Breadcrumb, Icon, DatePicker, message, Tag, Row, Col, Divider, Input, Popover, Button, Timeline, Card, Popconfirm, Spin } from 'antd';
 import './App.css';
 import './markdown.css';
 import moment from 'moment';
@@ -341,7 +341,8 @@ class NoteTags extends React.Component {
 class Note extends React.Component {
     state = {
         note_content: '',
-        note_tags: []
+        note_tags: [],
+        loading: true
     }
 
     constructor(props) {
@@ -354,9 +355,11 @@ class Note extends React.Component {
     }
 
     updateData = (id) => {
+        this.setState({'loading': true});
         if (id != null) {
             noteManager.fetchNote(id, (note) => {
                 this.setState({'note_content': note.content, 'note_tags': note.tags});
+                this.setState({'loading': false});
             });
         }
     }
@@ -377,6 +380,7 @@ class Note extends React.Component {
         );
 
         return (
+            <Spin size="large" tip="加载中..." delay={100} spinning={this.state.loading}>
             <Card bodyStyle={{ 'padding-top': '5px' }} title = {
                 <Row type="flex" justify="space-between" align="middle">
                     <Col>
@@ -410,6 +414,7 @@ class Note extends React.Component {
                 </Col>
             </Row>
             </Card>
+                </Spin>
         );
     }
 }
@@ -418,7 +423,6 @@ class App extends React.Component {
         notebook_id: 0,
         workspace_id: 0,
         note_id: 0,
-
         loading: true
     }
 
@@ -445,6 +449,7 @@ class App extends React.Component {
                     })
                 })
             });
+            this.setState({loading: false});
         };
 
         noteManager.initTree((tree) => {
@@ -484,22 +489,26 @@ class App extends React.Component {
     render() {
         return (
             <Layout>
-                <Header>
-                    {/* <div className="logo" /> */}
-                    <NoteBookMenu ref="notebook"
-                                  notebook_id={this.state.notebook_id}
-                                  onSelected = { this.onNotebookChanged }/>
-                    <WorkSpace ref="workspace"
-                               notebook_id = {this.state.notebook_id }
-                               workspace_id = {this.state.workspace_id }
-                               onSelected = { this.onWorkspaceChanged } />
-                </Header>
+                <Spin size="large" spinning={this.state.loading}>
+                    <Header>
+                        {/* <div className="logo" /> */}
+                        <NoteBookMenu ref="notebook"
+                                      notebook_id={this.state.notebook_id}
+                                      onSelected = { this.onNotebookChanged }/>
+                        <WorkSpace ref="workspace"
+                                   notebook_id = {this.state.notebook_id }
+                                   workspace_id = {this.state.workspace_id }
+                                   onSelected = { this.onWorkspaceChanged } />
+                    </Header>
+                </Spin>
 
                 <Layout>
                     <Sider width={200} style={{ background: '#fff' }}>
-                        <SiderNoteList ref="sidernotelist" workspace_id = {this.state.workspace_id}
-                                       note_id = {this.state.note_id}
-                                       onNoteSelected = { this.onNoteChanged } />
+                        <Spin size="large" spinning={this.state.loading}>
+                            <SiderNoteList ref="sidernotelist" workspace_id = {this.state.workspace_id}
+                                           note_id = {this.state.note_id}
+                                           onNoteSelected = { this.onNoteChanged } />
+                        </Spin>
                     </Sider>
 
                     <Layout style={{ padding: '15px 15px 15px' }}>

@@ -57,8 +57,7 @@ export default class Note extends React.Component {
         );
 
         return (
-            <Spin size="large" tip="加载中..." delay={100} spinning={this.state.loading}>
-            <Card bodyStyle={{ 'padding-top': '5px', 'min-height': "75vh"}} title = {
+            <Card bodyStyle={{ 'padding-top': '5px', 'min-height': "75vh"}} loading={this.state.loading} title = {
                 <Row type="flex" justify="space-between" align="middle">
                     <Col>
                         <h1 style={{ "display": "inline"}}>{ h1 }</h1>
@@ -101,7 +100,6 @@ export default class Note extends React.Component {
                     </Col>
                 </Row>
             </Card>
-            </Spin>
         );
     }
 }

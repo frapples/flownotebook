@@ -81,7 +81,7 @@ export default class NotebookApp extends React.Component {
     render() {
         return (
             <Layout>
-                <Spin size="large" spinning={this.state.loading} >
+                <Spin size="large" spinning={this.state.loading} tip="加载中...">
                     <Layout.Header>
                         {/* <div className="logo" /> */}
                         <NoteBookMenu ref="notebook"
@@ -92,21 +92,19 @@ export default class NotebookApp extends React.Component {
                                    workspaceId = {this.state.workspaceId }
                                    onSelected = { this.onWorkspaceChanged } />
                     </Layout.Header>
-                </Spin>
 
-                <Layout>
-                    <Layout.Sider width={200} style={{ background: '#fff' }}>
-                        <Spin size="large" spinning={this.state.loading}>
+                    <Layout>
+                        <Layout.Sider width={200} style={{ background: '#fff' }}>
                             <SiderNoteList ref="sidernotelist" workspaceId = {this.state.workspaceId}
                                            noteId = {this.state.noteId}
                                            onNoteSelected = { this.onNoteChanged } />
-                        </Spin>
-                    </Layout.Sider>
+                        </Layout.Sider>
 
-                    <Layout style={{ padding: '15px 15px 15px'}}>
-                        <Note ref="note" noteId = {this.state.noteId} />
+                        <Layout style={{ padding: '15px 15px 15px'}}>
+                            <Note ref="note" noteId = {this.state.noteId} />
+                        </Layout>
                     </Layout>
-                </Layout>
+                </Spin>
             </Layout>
         );
     }

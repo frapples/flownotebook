@@ -1,8 +1,8 @@
 
-export function markdown_h1_split(content) {
+export function markdownH1Split(content) {
     /* https://github.com/rexxars/react-markdown/issues/48*/
     let result = {};
-    result.remain = content.replace(/^#\s+(.+)$/m, (all_h1, h1) => {
+    result.remain = content.replace(/^#\s+(.+)$/m, (all, h1) => {
         result.h1 = h1;
         return "";
     });
@@ -10,7 +10,7 @@ export function markdown_h1_split(content) {
     return result;
 }
 
-export function fetch_post(url, data) {
+export function fetchPost(url, data) {
     return fetch(url, {
         method: 'POST',
         credentials: 'same-origin',

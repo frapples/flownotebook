@@ -4,12 +4,13 @@ import { Menu, Dropdown, Icon, message, Input, Button, Popconfirm} from 'antd';
 
 
 export default class WorkSpace extends React.Component {
+    state = {
+        notebooks: [],
+        workspaces: []
+    }
 
     constructor(props) {
         super();
-        this.workspaces = [];
-        this.notebooks = [];
-
         this.updateData(props.notebookId);
     }
 
@@ -18,14 +19,13 @@ export default class WorkSpace extends React.Component {
     }
 
     updateData = (notebookId) => {
-        this.notebooks = noteManager.getCategory(-1);
-        this.workspaces = noteManager.getCategory(notebookId);
+        this.setState({notebooks: noteManager.getCategory(-1),
+                       workspaces: noteManager.getCategory(notebookId)});
     }
 
     onAdd = (name) => {
         noteManager.addCategory(name, this.props.notebookId, (id) => {
             this.updateData(this.props.notebookId);
-            this.forceUpdate();
         });
     }
 
@@ -33,7 +33,6 @@ export default class WorkSpace extends React.Component {
         noteManager.delCategory(this.props.workspaceId,
                                 () => {
                                     this.updateData(this.props.notebookId);
-                                    this.forceUpdate();
                                     this.props.onSelected(null);
                                 });
     }
@@ -42,7 +41,6 @@ export default class WorkSpace extends React.Component {
         noteManager.moveCategory(notebookId, this.props.workspaceId,
                                  () => {
                                      this.updateData(this.props.notebookId);
-                                     this.forceUpdate();
                                      this.props.onSelected(null);
                                  });
     }
@@ -59,19 +57,19 @@ export default class WorkSpace extends React.Component {
             <Menu
             theme="dark"
             mode="horizontal"
-            defaultSelectedKeys={[this.props.workspaceId.toString()]}
+            defaultSelectedKeys={this.props.workspaceId == null ? [] : [this.props.workspaceId.toString()]}
             selectedKeys = { this.props.workspaceId === null ? [] : [this.props.workspaceId.toString()]}
             onSelect={ onSelect  }
             style={{ lineHeight: '64px', 'font-size': '14px' }} >
             {
-                this.workspaces.map(
+                this.state.workspaces.map(
                     (workspace) => <Menu.Item key={workspace.id}> {workspace.name} </Menu.Item>)
             }
-                <WorkSpaceOperateDropdown notebooks={this.notebooks}
+                <WorkSpaceOperateDropdown notebooks={this.state.notebooks}
                                           onAdd = {this.onAdd}
                                           onDelete = {this.onDelete}
                                           onMove = {this.onMove}
-                                          empty = {this.workspaces.length === 0}
+                                          empty = {this.state.workspaces.length === 0}
                                           style={{ 'margin-left': "10px" }} />
             </Menu>
         );

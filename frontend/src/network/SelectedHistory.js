@@ -18,9 +18,8 @@ class SelectedHistory {
             return this.defaultSelected[id];
         } else {
             this.defaultSelected[id] = undefined;
+            return null;
         }
-
-        return null;
     }
 
     getDefault = () => {

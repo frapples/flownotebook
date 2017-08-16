@@ -115,7 +115,15 @@ def category_move():
     if category is None or new_parent is None:
         return jsonify(success=False, reason="NOT EXISTS")
 
-    raise NotImplemented
+    if new_parent.level + 1 == category.level:
+        category.parent_id = new_parent_id
+    elif new_parent.level + 1 < category.level:
+        raise NotImplemented
+    elif new_parent.level + 1 > category.level:
+        raise NotImplemented
+
+    db.session.commit()
+    return jsonify(success=True)
 
 
 @blueprint.route("/note_get", methods=["POST"])

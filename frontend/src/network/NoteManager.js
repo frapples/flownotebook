@@ -1,5 +1,8 @@
 import { fetchPost } from '../utils/utils.js';
 import { message } from 'antd';
+import arraytool from '../utils/arraytool.js';
+
+let onError = () => message.error('获取数据失败。。。', 5);
 
 class NoteManager {
     constructor() {
@@ -42,7 +45,6 @@ class NoteManager {
     }
 
     fetchCategory = (id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
         fetchPost('/json_api/note/category_children', {'id': id})
             .then((res) => res.json().catch(onError))
             .then((result) => {
@@ -51,7 +53,6 @@ class NoteManager {
     };
 
     fetchNote = (id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
         fetchPost('/json_api/note/note_get', {id: id})
             .then((res) => res.json().catch(onError))
             .then((result) => {
@@ -60,7 +61,6 @@ class NoteManager {
     }
 
     fetchTree = (onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
         fetchPost('/json_api/note/category_tree')
             .then((res) => res.json().catch(onError))
             .then((result) => {
@@ -69,7 +69,6 @@ class NoteManager {
     };
 
     addCategory = (name, parent_id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
         fetchPost('/json_api/note/category_add', {name: name, parent_id: parent_id})
             .then((res) => res.json().catch(onError))
             .then((result) => {
@@ -84,15 +83,30 @@ class NoteManager {
 
     };
 
-    delCategory = (parent_id, id, onSuccess) => {
-        let onError = () => message.error('获取数据失败。。。', 5);
+    delCategory = (id, onSuccess) => {
         fetchPost('/json_api/note/category_del', {id: id})
             .then((res) => res.json().catch(onError))
             .then((result) => {
                 if (result.success) {
-                    let parent = this.findNode(parent_id, false);
-                    let node = parent.children.find((c) => c.id == id);
-                    parent.children.splice(parent.children.indexOf(node), 1);
+                    let parent = this.findNodeAndParent(id, false).parent;
+                    arraytool.removeItem(parent.children, (c) => c.id == id);
+
+                    onSuccess();
+                } else {
+                    onError();
+                }
+            });
+    }
+
+    moveCategory = (new_parent_id, id, onSuccess) => {
+        fetchPost('/json_api/note/category_move', {new_parent_id: new_parent_id, id: id})
+            .then((res) => res.json().catch(onError))
+            .then((result) => {
+                if (result.success) {
+                    let result = this.findNodeAndParent(id, false);
+                    let new_parent = this.findNode(new_parent_id, false);
+                    arraytool.removeItem(result.parent.children, (c) => c.id == id);
+                    new_parent.children.push(result.node);
 
                     onSuccess();
                 } else {

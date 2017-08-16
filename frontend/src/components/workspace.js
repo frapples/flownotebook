@@ -30,7 +30,7 @@ export default class WorkSpace extends React.Component {
     }
 
     onDelete = () => {
-        noteManager.delCategory(this.props.notebookId, this.props.workspaceId,
+        noteManager.delCategory(this.props.workspaceId,
                                 () => {
                                     this.updateData(this.props.notebookId);
                                     this.forceUpdate();
@@ -39,7 +39,12 @@ export default class WorkSpace extends React.Component {
     }
 
     onMove = (notebookId) => {
-        message.info("移动" + this.props.workspaceId + "到" + notebookId);
+        noteManager.moveCategory(notebookId, this.props.workspaceId,
+                                 () => {
+                                     this.updateData(this.props.notebookId);
+                                     this.forceUpdate();
+                                     this.props.onSelected(null);
+                                 });
     }
 
     render() {

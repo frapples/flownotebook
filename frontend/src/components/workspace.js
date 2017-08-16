@@ -34,7 +34,7 @@ export default class WorkSpace extends React.Component {
                                 () => {
                                     this.updateData(this.props.notebookId);
                                     this.forceUpdate();
-                                    this.onWorkspaceChanged(null);
+                                    this.props.onSelected(null);
                                 });
     }
 

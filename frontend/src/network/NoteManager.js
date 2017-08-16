@@ -3,21 +3,42 @@ import { message } from 'antd';
 
 class NoteManager {
     constructor() {
-        this.categoryCache = {};
-        this.tree_cache = [];
+        this.treeCache = {};
     }
 
     getCategory = (id, includeChildren) => {
-        if (!(id in this.categoryCache)) {
+        let node = this.findNode(id, false);
+        if (node == null) {
             return [];
         }
 
-        let nodes = this.categoryCache[id].children.slice(0);
+        let nodes = node.children.slice(0);
         if (!includeChildren) {
             nodes = nodes.map((node) => Object.assign({}, node, {'children': undefined}));
         }
 
         return nodes;
+    }
+
+    findNode = (id, isLeaf) => {
+        return this.findNodeAndParent(id, isLeaf).node;
+    }
+
+    findNodeAndParent = (id, isLeaf) => {
+        let result = {parent: null, node: null};
+        const find = (parent, tree) => {
+            if (tree.id == id && isLeaf == (tree.note_type != undefined)) {
+                result.node = tree;
+                result.parent = parent;
+            } else {
+                if (tree.children) {
+                    tree.children.forEach((children) => find(tree, children));
+                }
+            }
+        };
+
+        find(null, this.treeCache);
+        return result;
     }
 
     fetchCategory = (id, onSuccess) => {
@@ -53,8 +74,8 @@ class NoteManager {
             .then((res) => res.json().catch(onError))
             .then((result) => {
                 if (result.success) {
-                    this.categoryCache[result.id] = {name: name, id: result.id, children: []};
-                    this.categoryCache[parent_id].children.push(this.categoryCache[result.id]);
+                    let node = this.findNode(parent_id, false);
+                    node.children.push({name: name, id: result.id, children: []});
                     onSuccess(result.id);
                 } else {
                     onError();
@@ -69,9 +90,10 @@ class NoteManager {
             .then((res) => res.json().catch(onError))
             .then((result) => {
                 if (result.success) {
-                    let children = this.categoryCache[parent_id].children;
-                    children.splice(children.indexOf(this.categoryCache[id]), 1);
-                    this.categoryCache[id] = undefined;
+                    let parent = this.findNode(parent_id, false);
+                    let node = parent.children.find((c) => c.id == id);
+                    parent.children.splice(parent.children.indexOf(node), 1);
+
                     onSuccess();
                 } else {
                     onError();
@@ -80,22 +102,13 @@ class NoteManager {
     }
 
     initCategoryTree = (onSuccess) => {
-
-        const cache = (node) => {
-            if ('children' in node) {
-                this.categoryCache[node.id] = node;
-                node.children.forEach((subnode) => cache(subnode));
-            }
-        };
-
         this.fetchTree((tree) => {
-            this.tree_cache = tree;
-            cache({id: -1, name: "", children: tree});
-            onSuccess(tree);
+            this.treeCache = {id: -1, name: "", children: tree};
+            onSuccess();
         });
     }
-
 };
 
 let noteManager = new NoteManager();
+
 export default noteManager;

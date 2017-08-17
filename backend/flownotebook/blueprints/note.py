@@ -97,6 +97,7 @@ def category_del():
         else:
             for n in node.notes:
                 db.session.delete(n)
+        db.session.delete(node)
 
     del_(category)
     db.session.commit()

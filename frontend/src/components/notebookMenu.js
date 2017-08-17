@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Dropdown, Icon, Input, Button, Modal, Col, Row} from 'antd';
+import { Menu, Dropdown, Icon, Input, Button, Modal, Col, Row, Popconfirm} from 'antd';
 
 import noteManager from '../network/NoteManager.js';
 import { SimpleInputModal, stateGetterSetter } from './component.js';
@@ -33,6 +33,14 @@ export default class NoteBookMenu extends React.Component {
         }
     }
 
+    onDelete = (id) => {
+        noteManager.delCategory(id, () => {
+            this.notebooks = noteManager.getCategory(-1);
+            this.forceUpdate();
+            this.props.onSelected(null);
+        });
+    }
+
     render() {
         const onSelect = (e) => {
             if (e.key == "add") {
@@ -45,12 +53,24 @@ export default class NoteBookMenu extends React.Component {
 
         const menu = (
             <Menu onClick={ onSelect }
-            defaultSelectedKeys = { [this.props.notebookId.toString()] }
-            selectedKeys = { [this.props.notebookId.toString()] }
+                  defaultSelectedKeys = { this.props.notebookId == null ? [] : [this.props.notebookId.toString()] }
+                  selectedKeys = { this.props.notebookId == null ? [] : [this.props.notebookId.toString()] }
             >
             {
                 this.notebooks.map(
-                    (book) => (<Menu.Item key={book.id} > {book.name} </Menu.Item>))
+                    (book) => (<Menu.Item key={book.id} >
+                        <Row offset={1} justify="space-between">
+                            <Col span={18}> {book.name}</Col>
+                            <Col span={6}>
+                                <Popconfirm title={"确认删除" + book.name + "笔记本? "}
+                                            okText="是"
+                                            cancelText="否"
+                                            onConfirm={ () => this.onDelete(book.id) }>
+                                    <Button icon="delete" size="small" shape="circle" type="dashed" />
+                                </Popconfirm>
+                            </Col>
+                        </Row>
+                    </Menu.Item>))
             }
             <Menu.Divider/>
             <Menu.Item key="add">

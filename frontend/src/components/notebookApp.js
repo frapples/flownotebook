@@ -46,11 +46,12 @@ export default class NotebookApp extends React.Component {
 
     onNoteChanged = (id) => {
         if (id == null) {
+            this.setState(selectedHistory.toggleWorkspace(this.state.notebookId, this.state.workspaceId));
         } else {
             selectedHistory.toggleNote(this.state.workspaceId, id);
+            this.setState({'noteId': id});
         }
 
-        this.setState({'noteId': id});
     }
 
     render() {

@@ -32,4 +32,6 @@ export function urlencode(data) {
 }
 
 
-
+export function stringIsInt(s) {
+    return parseInt(s).toString() == s;
+}

@@ -1,9 +1,15 @@
 import React from 'react';
-import { Menu, Icon, Input, Button} from 'antd';
+import { Menu, Icon, Input, Button, Popover, Row, Col, Popconfirm} from 'antd';
 
 import noteManager from '../network/NoteManager.js';
 
+import { stringIsInt } from '../utils/utils.js';
+
 export default class SiderNoteList extends React.Component {
+    state = {
+        inputVisible: false
+    }
+
     constructor(props) {
         super();
         this.groupAndNotes = [];
@@ -18,9 +24,32 @@ export default class SiderNoteList extends React.Component {
         return group ? group.id : null;
     }
 
+    onGroupAdd = (name) => {
+        noteManager.addCategory(name, this.props.workspaceId, (id) => {
+            this.groupAndNotes = noteManager.getCategory(this.props.workspaceId, true);
+            this.forceUpdate();
+        });
+    }
+
+    onGroupDelete = (id) => {
+        noteManager.delCategory(id, () => {
+            this.groupAndNotes = noteManager.getCategory(this.props.workspaceId, true);
+            this.forceUpdate();
+            this.props.onNoteSelected(null);
+        });
+    }
+
+    handleInputConfirm = (e) => {
+        let name = e.target.value.trim();
+        if (name) {
+            this.onGroupAdd(name);
+        }
+        this.setState({inputVisible: false});
+    }
+
     render() {
         const onClick = (e) => {
-            if (e.item) {
+            if (e.item && stringIsInt(e.key)) {
                 let id = parseInt(e.key);
                 this.props.onNoteSelected(id);
             }
@@ -44,18 +73,57 @@ export default class SiderNoteList extends React.Component {
                 />
                 {
                     this.groupAndNotes.map((group) => (
-                        <Menu.SubMenu key={group.id} title={<span><Icon type="folder" />{group.name}</span>}>
+                        <Menu.SubMenu key={group.id} title={
+                            <Popover
+                                content={
+                                    <Button.Group>
+                                        <Button size="small" icon="plus" />
+                                        <Popconfirm title={"确认删除" + group.name + "? "}
+                                                          okText="是"
+                                                          cancelText="否"
+                                                          onConfirm={ () => this.onGroupDelete(group.id) }>
+                                            <Button size="small" icon="delete" />
+                                        </Popconfirm>
+                                    </Button.Group>
+                                }
+                                        placement="topLeft"
+                                        trigger="hover"
+                                        mouseLeaveDelay="0.5"
+                                >
+                                <span><Icon type="folder" />{group.name}</span>
+                            </Popover>
+                        } >
                             {
                                 group.children.map((note) => <Menu.Item key={note.id}>{note.title}</Menu.Item>)
                             }
+
                         </Menu.SubMenu>)
                     )
                 }
 
-                <Button size="small"
-                        type="dashed"
-                        icon="plus"
-                        style= {{ 'margin-left':'50%', 'margin-right': '50%' }} />
+                <Menu.Item key="add">
+                    <Row type="flex" justify="center" >
+                        <Col>
+                        {
+                            this.state.inputVisible ?
+                            <Input
+                                ref="input"
+                                type="text"
+                                size="small"
+                                style={{ width: 78 }}
+                                onBlur={ () => this.setState({inputVisible: false}) }
+                                onPressEnter={this.handleInputConfirm}
+                            />
+                            :
+                            <Button size="small"
+                                    type="dashed"
+                                    icon="plus"
+                                    onClick={ () => this.setState({inputVisible: true}, () => this.refs.input.focus()) }
+                            />
+                        }
+                        </Col>
+                    </Row>
+                </Menu.Item>
             </Menu>
         );
     }

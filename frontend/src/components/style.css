@@ -29,3 +29,10 @@
 	  text-overflow:ellipsis;
 	  white-space:nowrap;
 }
+
+.markdown-editor-textarea {
+    resize: none;
+	  font-size:14px !important;
+	  /* line-height:1.8 */
+	  line-height:1.5 !important
+}

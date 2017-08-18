@@ -1,12 +1,11 @@
 import React from 'react';
 import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert } from 'antd';
-import ReactMarkdown from 'react-markdown';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
-import './markdown.css';
 
 import noteManager from '../network/NoteManager.js';
 import { markdownH1Split } from '../utils/utils.js';
+import { MarkdownEditor, MarkdownViewer } from './markdownComponent.js';
 
 moment.locale('zh-cn');
 const dateFormat = 'YYYY-MM-DD';
@@ -14,7 +13,9 @@ const dateFormat = 'YYYY-MM-DD';
 export default class Note extends React.Component {
     state = {
         noteContent: '',
-        loading: true
+        draftContent: '',
+        loading: true,
+        editorMode: false
     }
 
     constructor(props) {
@@ -27,6 +28,12 @@ export default class Note extends React.Component {
         this.updateData(nextProps.noteId);
     }
 
+    saveDraft = (content) => {
+        if (this.state.noteContent != this.state.draftContent) {
+            alert(JSON.stringify(this.state.draftContent));
+        }
+    }
+
     updateData = (id) => {
         if (id == null) {
             this.tags = [];
@@ -36,16 +43,14 @@ export default class Note extends React.Component {
             if (id != null) {
                 noteManager.fetchNote(id, (note) => {
                     this.tags = note.tags;
-                    this.setState({'noteContent': note.content, loading: false});
+                    this.setState({'noteContent': note.content, 'draftContent': note.content, loading: false});
                 });
             }
         }
     }
 
     render() {
-        let result = markdownH1Split(this.state.noteContent);
-        let h1 = result.h1;
-        let contentRemain = result.remain;
+        let result = markdownH1Split(this.state.editorMode ? this.state.draftContent : this.state.noteContent);
 
         const updatedLog = (
             <Timeline>
@@ -60,8 +65,10 @@ export default class Note extends React.Component {
             <Card bodyStyle={{ 'padding-top': '5px', 'min-height': "75vh"}} loading={this.state.loading} title = {
                 <Row type="flex" justify="space-between" align="middle">
                     <Col>
-                        <h1 style={{ "display": "inline"}}>{ h1 }</h1>
-                        <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                        <h1 style={{ "display": "inline"}}>{ result.h1 }</h1>
+                        <Button icon={ this.state.editorMode ? "file-text" : "edit" }
+                                     size="small" shape="circle" style={{ 'margin-left': '5px'}}
+                                     onClick={ () => this.setState({editorMode: !this.state.editorMode})} />
                         <Popover content={updatedLog} title="修改记录">
                             <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
                         </Popover>
@@ -74,31 +81,14 @@ export default class Note extends React.Component {
             <div style={{ 'padding-bottom': '5px'}}>
             <NoteTags tags= { this.tags } noteId = {this.props.noteId} />
             </div>
-            <Row>
-            <Col span={20}>
             {
-                this.props.noteId == null ?
-                <Alert
-                    message="未选择笔记..."
-                    description="在左侧的笔记列表中选择一个笔记"
-                    type="info"
-                    showIcon
-                />
+                this.state.editorMode ?
+                <MarkdownEditor content={ this.state.draftContent }
+                                onInputChange={ (v) => this.setState({draftContent: v.replace(/\n/g, '\r\n') }) }
+                                onBlur={ this.saveDraft } />
                 :
-                <ReactMarkdown
-                    className="markdown"
-                    source={ contentRemain } />
+                <MarkdownViewer content={ result.remain } noteId={ this.props.noteId }/>
             }
-                    </Col>
-                    <Col span={4}>
-                        <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
-                            <ul>
-                                <li><a herf="#">开发环境配置</a></li>
-                                <li><a herf="#">servlet API介绍</a></li>
-                            </ul>
-                        </Card>
-                    </Col>
-                </Row>
             </Card>
         );
     }

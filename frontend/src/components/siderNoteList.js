@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Icon, Input, Button, Popover, Row, Col, Popconfirm} from 'antd';
+import { Menu, Icon, Input, Button, Popover, Row, Col, Popconfirm, Dropdown} from 'antd';
 
 import noteManager from '../network/NoteManager.js';
 
@@ -39,6 +39,20 @@ export default class SiderNoteList extends React.Component {
         });
     }
 
+    onNoteAdd = (group_id, type) => {
+        if (type == 'markdown') {
+            let defaultTitle = "未命名笔记...";
+            let defaultContent = "# 未命名笔记...\n";
+            noteManager.addNote(group_id, defaultTitle, defaultContent, type, (id) => {
+                this.groupAndNotes = noteManager.getCategory(this.props.workspaceId, true);
+                this.forceUpdate();
+                this.props.onNoteSelected(id);
+            });
+        } else {
+            console.log(type);
+        }
+    }
+
     handleInputConfirm = (e) => {
         let name = e.target.value.trim();
         if (name) {
@@ -74,21 +88,28 @@ export default class SiderNoteList extends React.Component {
                 {
                     this.groupAndNotes.map((group) => (
                         <Menu.SubMenu key={group.id} title={
-                            <Popover
-                                content={
-                                    <Button.Group>
+                            <Popover content={
+                                <Button.Group>
+                                    <Dropdown overlay={
+                                        <Menu onClick={ (e) => this.onNoteAdd(group.id, e.key) } >
+                                            <Menu.Item key="markdown"><Icon size="small" type="copy" /> 笔记</Menu.Item>
+                                            <Menu.Item key="scraps"><Icon size="small" type="appstore-o" /> 摘取</Menu.Item>
+                                            <Menu.Item key="snippet"><Icon size="small" type="code-o" /> 代码</Menu.Item>
+                                        </Menu>
+                                    }>
                                         <Button size="small" icon="plus" />
-                                        <Popconfirm title={"确认删除" + group.name + "? "}
-                                                          okText="是"
-                                                          cancelText="否"
-                                                          onConfirm={ () => this.onGroupDelete(group.id) }>
-                                            <Button size="small" icon="delete" />
-                                        </Popconfirm>
-                                    </Button.Group>
-                                }
-                                        placement="topLeft"
-                                        trigger="hover"
-                                        mouseLeaveDelay="0.5"
+                                    </Dropdown>
+                                    <Popconfirm title={"确认删除" + group.name + "? "}
+                                                      okText="是"
+                                                      cancelText="否"
+                                                      onConfirm={ () => this.onGroupDelete(group.id) }>
+                                        <Button size="small" icon="delete"/>
+                                    </Popconfirm>
+                                </Button.Group>
+                            }
+                                             placement="topLeft"
+                                             trigger="hover"
+                                             mouseLeaveDelay="0.5"
                                 >
                                 <span><Icon type="folder" />{group.name}</span>
                             </Popover>

@@ -2,7 +2,23 @@ import { fetchPost } from '../utils/utils.js';
 import { message } from 'antd';
 import arraytool from '../utils/arraytool.js';
 
-let onError = () => message.error('获取数据失败。。。', 5);
+
+function fetchPostFromJsonAPI(url, post, onSuccess, onFailed) {
+    let onError = () => message.error('获取数据失败。。。', 5);
+    if (!onFailed) {
+        onFailed = () => () => message.warning('操作执行失败。。。', 5);
+    }
+
+    fetchPost(url, post)
+        .then((res) => res.json().catch(onError))
+        .then((result) => {
+            if (result.success) {
+                onSuccess(result);
+            } else {
+                onFailed(result);
+            }
+        });
+}
 
 class NoteManager {
     constructor() {
@@ -45,74 +61,54 @@ class NoteManager {
     }
 
     fetchCategory = (id, onSuccess) => {
-        fetchPost('/json_api/note/category_children', {'id': id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                onSuccess(result.data);
-            });
+        fetchPostFromJsonAPI('/json_api/note/category_children', {'id': id}, (result) => onSuccess(result.data));
     };
 
     fetchNote = (id, onSuccess) => {
-        fetchPost('/json_api/note/note_get', {id: id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                onSuccess(result.data);
-            });
+        fetchPostFromJsonAPI('/json_api/note/note_get', {id: id}, (result) => onSuccess(result.data));
     }
 
     fetchTree = (onSuccess) => {
-        fetchPost('/json_api/note/category_tree')
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                onSuccess(result.data);
-            });
+        fetchPostFromJsonAPI('/json_api/note/category_tree', {}, (result) => onSuccess(result.data));
     };
 
     addCategory = (name, parent_id, onSuccess) => {
-        fetchPost('/json_api/note/category_add', {name: name, parent_id: parent_id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                if (result.success) {
-                    let node = this.findNode(parent_id, false);
-                    node.children.push({name: name, id: result.id, children: []});
-                    onSuccess(result.id);
-                } else {
-                    onError();
-                }
-            });
-
+        fetchPostFromJsonAPI('/json_api/note/category_add', {name: name, parent_id: parent_id},
+                             (result) => {
+                                 let node = this.findNode(parent_id, false);
+                                 node.children.push({name: name, id: result.id, children: []});
+                                 onSuccess(result.id);
+                             });
     };
 
     delCategory = (id, onSuccess) => {
-        fetchPost('/json_api/note/category_del', {id: id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                if (result.success) {
-                    let parent = this.findNodeAndParent(id, false).parent;
-                    arraytool.removeItem(parent.children, (c) => c.id == id);
+        fetchPostFromJsonAPI('/json_api/note/category_del', {id: id}, (result) => {
+            let parent = this.findNodeAndParent(id, false).parent;
+            arraytool.removeItem(parent.children, (c) => c.id == id);
 
-                    onSuccess();
-                } else {
-                    onError();
-                }
-            });
+            onSuccess();
+        });
     }
 
     moveCategory = (new_parent_id, id, onSuccess) => {
-        fetchPost('/json_api/note/category_move', {new_parent_id: new_parent_id, id: id})
-            .then((res) => res.json().catch(onError))
-            .then((result) => {
-                if (result.success) {
-                    let result = this.findNodeAndParent(id, false);
-                    let new_parent = this.findNode(new_parent_id, false);
-                    arraytool.removeItem(result.parent.children, (c) => c.id == id);
-                    new_parent.children.push(result.node);
+        fetchPostFromJsonAPI('/json_api/note/category_move', {new_parent_id: new_parent_id, id: id},
+                             () => {
+                                 let result = this.findNodeAndParent(id, false);
+                                 let new_parent = this.findNode(new_parent_id, false);
+                                 arraytool.removeItem(result.parent.children, (c) => c.id == id);
+                                 new_parent.children.push(result.node);
 
-                    onSuccess();
-                } else {
-                    onError();
-                }
-            });
+                                 onSuccess();
+                             });
+    }
+
+    addNote = (category_id, title, content, type, onSuccess) => {
+        fetchPostFromJsonAPI('/json_api/note/note_add', {category_id: category_id, content: content, type: type},
+                             (result) => {
+                                 let category = this.findNode(category_id, false);
+                                 category.children.push({id: result.id, note_type: type, title: title});
+                                 onSuccess(result.id);
+                             });
     }
 
     initCategoryTree = (onSuccess) => {

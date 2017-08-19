@@ -29,7 +29,8 @@ export default class Note extends React.Component {
     }
 
     saveDraft = (content) => {
-        if (this.state.noteContent != this.state.draftContent) {
+        let draftContent = this.state.draftContent.replace(/\n/g, '\r\n');
+        if (this.state.noteContent != draftContent) {
             alert(JSON.stringify(this.state.draftContent));
         }
     }
@@ -84,7 +85,7 @@ export default class Note extends React.Component {
             {
                 this.state.editorMode ?
                 <MarkdownEditor content={ this.state.draftContent }
-                                onInputChange={ (v) => this.setState({draftContent: v.replace(/\n/g, '\r\n') }) }
+                                onInputChange={ (v) => this.setState({draftContent: v }) }
                                 onBlur={ this.saveDraft } />
                 :
                 <MarkdownViewer content={ result.remain } noteId={ this.props.noteId }/>

@@ -62,10 +62,12 @@ class Note(db.Model):
 
     @orm.reconstructor
     def init_on_load(self):
-        with open(self.filepath(), "r", encoding="utf8", newline="\r\n") as f:
+        # newline=None时，会智能识别流中的'\r', '\n', '\r\n'并转换成'\n'
+        with open(self.filepath(), "r", encoding="utf8") as f:
             self.content = f.read()
 
     def write_content(self):
+        # 将'\n'转换成'\r\n'写入流
         with open(self.filepath(), "w", encoding="utf8", newline="\r\n") as f:
             f.write(self.content)
 

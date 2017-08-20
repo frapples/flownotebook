@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert } from 'antd';
+import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert, Popconfirm} from 'antd';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
 
@@ -28,11 +28,25 @@ export default class Note extends React.Component {
         this.updateData(nextProps.noteId);
     }
 
-    saveDraft = (content) => {
-        let draftContent = this.state.draftContent.replace(/\n/g, '\r\n');
-        if (this.state.noteContent != draftContent) {
-            alert(JSON.stringify(this.state.draftContent));
+    hasDraft = () => {
+        return this.state.draftContent && this.state.noteContent != this.state.draftContent;
+    }
+
+    saveDraft = () => {
+        if (this.hasDraft()) {
+            noteManager.saveDraft(this.props.noteId, this.state.draftContent, () => {
+            });
         }
+    }
+
+    canelDraft = () => {
+            noteManager.saveDraft(this.props.noteId, this.state.noteContent, () => {
+            });
+            this.setState({draftContent: this.state.noteContent});
+    }
+
+    saveNote = () => {
+        alert(JSON.stringify(this.state.draftContent));
     }
 
     updateData = (id) => {
@@ -44,7 +58,9 @@ export default class Note extends React.Component {
             if (id != null) {
                 noteManager.fetchNote(id, (note) => {
                     this.tags = note.tags;
-                    this.setState({'noteContent': note.content, 'draftContent': note.content, loading: false});
+                    this.setState({'noteContent': note.content,
+                                   'draftContent': note.draft ? note.draft : note.content,
+                                   loading: false});
                 });
             }
         }
@@ -62,14 +78,31 @@ export default class Note extends React.Component {
             </Timeline>
         );
 
+        let editorModeToggle = () => this.setState({editorMode: !this.state.editorMode});
+
+        const saveButton = () => this.hasDraft() ?
+                               <Popconfirm title={"检测到笔记已修改，是否保存? "} okText="保存" cancelText="撤销" onCancel={ () => {
+                                       this.canelDraft();
+                                       editorModeToggle();
+                               }} onConfirm={ () => {
+                                                   this.saveNote();
+                                                   editorModeToggle();
+                                           } } >
+                                    <Button icon="file-text" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
+                                </Popconfirm>
+                                :
+                               <Button icon="file-text" size="small" shape="circle" style={{ 'margin-left': '5px'}} onClick={ editorModeToggle } />;
         return (
             <Card bodyStyle={{ 'padding-top': '5px', 'min-height': "75vh"}} loading={this.state.loading} title = {
                 <Row type="flex" justify="space-between" align="middle">
                     <Col>
                         <h1 style={{ "display": "inline"}}>{ result.h1 }</h1>
-                        <Button icon={ this.state.editorMode ? "file-text" : "edit" }
-                                     size="small" shape="circle" style={{ 'margin-left': '5px'}}
-                                     onClick={ () => this.setState({editorMode: !this.state.editorMode})} />
+                        {
+                            this.state.editorMode ?
+                            saveButton()
+                            :
+                            <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} onClick={ editorModeToggle } />
+                        }
                         <Popover content={updatedLog} title="修改记录">
                             <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
                         </Popover>
@@ -85,6 +118,8 @@ export default class Note extends React.Component {
             {
                 this.state.editorMode ?
                 <MarkdownEditor content={ this.state.draftContent }
+                                hasDraft={ this.hasDraft() }
+                                canelDraft= {this.canelDraft}
                                 onInputChange={ (v) => this.setState({draftContent: v }) }
                                 onBlur={ this.saveDraft } />
                 :

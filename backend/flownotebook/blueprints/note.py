@@ -137,7 +137,9 @@ def get_note():
     if note_ and note_.category.user_id == user_id:
         tags = [t.name for t in note_.tags]
         return jsonify(success=True,
-                       data=dict(content=note_.content, tags=tags))
+                       data=dict(content=note_.content,
+                                 tags=tags,
+                                 draft=note_.draft))
     else:
         return jsonify(success=False, reason="NOT EXISTS")
 
@@ -169,6 +171,21 @@ def note_del():
     note_ = Note.query.get(note_id)
     if note_ and note_.category.user_id == user_id:
         db.session.delete(note_)
+        db.session.commit()
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, reason="NOT_EXISTS")
+
+
+@blueprint.route("/note_save_draft", methods=["POST"])
+@jsonapi_logined_validation
+def note_save_draft():
+    note_id = int(request.form["id"])
+    draft = request.form["draft"]
+    user_id = session['login_user_id']
+    note_ = Note.query.get(note_id)
+    if note_ and note_.category.user_id == user_id:
+        note_.draft = draft
         db.session.commit()
         return jsonify(success=True)
     else:

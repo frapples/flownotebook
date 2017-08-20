@@ -31,8 +31,22 @@
 }
 
 .markdown-editor-textarea {
+    width: 100%;
+    border: none;
     resize: none;
-	  font-size:14px !important;
+    margin-right: 10px;
+	  font-size:14px;
 	  /* line-height:1.8 */
-	  line-height:1.5 !important
+	  line-height:1.5;
+}
+
+.markdown-editor-diver {
+    width: 50%;
+    height: 100%;
+    border-right: 1px solid #ddd;
+}
+
+.markdown-editor-title {
+    font-size: 1.5em;
+    font-weight: 300;
 }

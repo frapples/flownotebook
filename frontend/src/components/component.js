@@ -53,3 +53,34 @@ export class SimpleInputModal extends React.Component {
             </Modal>);
     }
 }
+
+export class Textarea extends React.Component {
+    constructor(props) {
+        super();
+        this.state = {
+            target: {value: props.value}
+        }
+    }
+
+    componentWillReceiveProps(nextProps) {
+        this.setState({target: {value: nextProps.value}});
+    }
+
+    rows = () => {
+        let lines = this.state.target.value.split(/\n/).length;
+        return lines > this.props.minRows ? lines : this.props.minRows;
+    }
+
+    render() {
+        return (
+            <textarea
+                className={this.props.className}
+                style={this.props.style}
+                placeholder={ this.props.placeholder }
+                onChange={ this.props.onChange }
+                onBlur={ this.props.onBlur }
+                rows={ this.rows() }
+                value={ this.state.target.value } />
+        );
+    }
+}

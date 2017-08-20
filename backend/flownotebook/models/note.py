@@ -49,6 +49,7 @@ class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True, nullable=False)
     note_type = db.Column(db.Enum(NoteType), nullable=False)
     title = db.Column(db.String, nullable=False)
+    draft = db.Column(db.Text, default="")
     is_trash = db.Column(db.Boolean, default=False, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
 

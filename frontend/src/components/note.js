@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert, Popconfirm} from 'antd';
+import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert, Popconfirm, Tooltip} from 'antd';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
 
@@ -69,12 +69,17 @@ export default class Note extends React.Component {
     render() {
         let result = markdownH1Split(this.state.editorMode ? this.state.draftContent : this.state.noteContent);
 
+        let logs = [
+            '2017-09-01 增加了3行，删除了2行',
+            '2017-09-01 增加了5行，删除了1行',
+            '2017-09-01 增加了8行，删除了2行',
+            '2017-09-01 增加了1行，删除了0行',
+        ]
         const updatedLog = (
             <Timeline>
-                <Timeline.Item>2017-09-01 增加了3行，删除了2行。</Timeline.Item>
-                <Timeline.Item>2016-09-03增加了9行，删除了1行。</Timeline.Item>
-                <Timeline.Item>2015-09-01增加了3行，删除了2行。</Timeline.Item>
-                <Timeline.Item>2015-07-01 创建笔记。 </Timeline.Item>
+                {
+                    logs.map((s) => <Timeline.Item>{s}</Timeline.Item>)
+                }
             </Timeline>
         );
 
@@ -155,15 +160,18 @@ class NoteTags extends React.Component {
         if (newTag !== "" && this.state.tags.indexOf(newTag) >= 0) {
             message.info("标签" + newTag + "已经存在，无需添加。");
         } else {
-            this.setState({tags: [...this.state.tags, newTag]});
+            noteManager.addTag(this.props.noteId, newTag, () =>
+                this.setState({tags: [...this.state.tags, newTag]})
+            );
         }
         this.setState({inputVisible: false});
     }
 
     handleClose = (removedTag) => {
         const tags = this.state.tags.filter(tag => tag !== removedTag);
-        message.info("移除标签" + removedTag);
-        this.setState({ tags: tags });
+        noteManager.delTag(this.props.noteId, removedTag, () =>
+            this.setState({ tags: tags })
+        );
     }
 
     render() {

@@ -1,7 +1,7 @@
 import flask
 from flask import request, session, jsonify
 import sqlalchemy
-from ..models import Category, Note, db
+from ..models import Category, Note, Tag, db
 
 from .user import jsonapi_logined_validation
 
@@ -187,6 +187,42 @@ def note_save_draft():
     if note_ and note_.category.user_id == user_id:
         note_.draft = draft
         db.session.commit()
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, reason="NOT_EXISTS")
+
+
+@blueprint.route("/note_tag_add", methods=["POST"])
+@jsonapi_logined_validation
+def note_tag_add():
+    note_id = int(request.form["id"])
+    user_id = session['login_user_id']
+    note_ = Note.query.get(note_id)
+    if note_ and note_.category.user_id == user_id:
+        try:
+            tag = Tag.query.filter_by(name=request.form['tagname']).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            tag = Tag(name=request.form['tagname'])
+        note_.tags.append(tag)
+        db.session.commit()
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, reason="NOT_EXISTS")
+
+
+@blueprint.route("/note_tag_del", methods=["POST"])
+@jsonapi_logined_validation
+def note_tag_del():
+    note_id = int(request.form["id"])
+    user_id = session['login_user_id']
+    note_ = Note.query.get(note_id)
+    if note_ and note_.category.user_id == user_id:
+        try:
+            tag = Tag.query.filter_by(name=request.form['tagname']).one()
+            note_.tags.remove(tag)
+            db.session.commit()
+        except sqlalchemy.orm.exc.NoResultFound:
+            pass
         return jsonify(success=True)
     else:
         return jsonify(success=False, reason="NOT_EXISTS")

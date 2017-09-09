@@ -111,6 +111,19 @@ class NoteManager {
                              });
     }
 
+    addTag = (note_id, tag_name, onSuccess) => {
+        fetchPostFromJsonAPI('/json_api/note/note_tag_add', {id: note_id, tagname: tag_name},
+                             () => {
+                                 onSuccess();
+                             });
+    }
+
+    delTag = (note_id, tag_name, onSuccess) => {
+        fetchPostFromJsonAPI('/json_api/note/note_tag_del', {id: note_id, tagname: tag_name},
+                             () => {
+                                 onSuccess();
+                             });
+    }
 
     saveDraft = (noteId, draft, onSuccess) => {
         fetchPostFromJsonAPI('/json_api/note/note_save_draft', {id: noteId, draft: draft}, (result) => onSuccess());

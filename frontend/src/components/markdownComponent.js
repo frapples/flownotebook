@@ -1,14 +1,20 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { markdownH1Split } from '../utils/utils.js';
+import { markdownH1Split, markdownToc } from '../utils/utils.js';
 import { Icon, message, Row, Col, Input, Button, Card, Alert, Popconfirm, Tooltip} from 'antd';
 
 import {Textarea} from "./component.js";
 import './markdown.css';
 import './style.css';
 
+import CommonMark from 'commonmark';
+import ReactRenderer from 'commonmark-react-renderer';
+
+
 export class MarkdownEditor extends React.Component {
     render() {
+        generateToc(this.props.content);
+
         return (
             <Card>
                 <Row type="flex" justify="space-around">
@@ -45,7 +51,9 @@ export class MarkdownEditor extends React.Component {
                         } bordered={false} noHovering={true} bodyStyle={{ "padding-left": 0, "padding-right": 0 }} >
                             <ReactMarkdown
                                 className="markdown"
-                                source={ this.props.content } />
+                                source={ this.props.content }
+                            renderers={{Heading: HeadingRenderer}}
+                            />
                         </Card>
                     </Col>
                 </Row>
@@ -55,8 +63,19 @@ export class MarkdownEditor extends React.Component {
     }
 }
 
+/* https://github.com/rexxars/react-markdown/issues/69 */
+function HeadingRenderer(props) {
+    /* let key = props.level + props.children[0];*/
+    let key = props.children[0];
+    return React.createElement('h' + props.level, {}, [...props.children,
+                                                       <a name={ key }></a>])
+}
+
+
 export class MarkdownViewer extends React.Component {
     render() {
+
+        /* markdownToc(this.props.content);*/
         return (
 
             <Row>
@@ -72,18 +91,28 @@ export class MarkdownViewer extends React.Component {
                         :
                         <ReactMarkdown
                             className="markdown"
-                            source={ this.props.content } />
+                            source={ this.props.content }
+                            renderers={{Heading: HeadingRenderer}}
+                        />
                     }
                 </Col>
                 <Col span={4}>
                     <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
-                        <ul>
-                            <li><a herf="#">开发环境配置</a></li>
-                            <li><a herf="#">servlet API介绍</a></li>
-                        </ul>
+                        {
+                            generateToc(this.props.content)
+                        }
                     </Card>
                 </Col>
             </Row>
         );
     }
+}
+
+
+function generateToc(content) {
+    var parser = new CommonMark.Parser();
+    var renderer = new ReactRenderer({allowedTypes: ['heading']});
+
+    var ast = parser.parse(content);
+    return renderer.render(ast);
 }

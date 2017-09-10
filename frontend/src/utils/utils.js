@@ -1,3 +1,4 @@
+import commonmark from 'commonmark';
 
 export function markdownH1Split(content) {
     /* https://github.com/rexxars/react-markdown/issues/48*/
@@ -8,6 +9,24 @@ export function markdownH1Split(content) {
     });
 
     return result;
+}
+
+export function markdownToc(content) {
+    let lines = content.split("\n");
+    let walker = new commonmark.Parser().parse(content).walker();
+
+    let toc = []
+    let event, node;
+
+    while ((event = walker.next())) {
+        node = event.node;
+        if (event.entering && node.type === 'heading') {
+            let pos = node.sourcepos;
+            let line = pos[0][0] - 1;
+            toc.push([node.level, lines[line].substring(pos[0][1], pos[1][1])])
+        }
+    }
+    return toc;
 }
 
 export function fetchPost(url, data) {

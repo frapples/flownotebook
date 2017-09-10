@@ -107,4 +107,3 @@ class MediaReference(db.Model):
     def init_on_load(self):
         self.filepath = ""
         raise NotImplemented
-

@@ -126,7 +126,14 @@ class NoteManager {
     }
 
     saveDraft = (noteId, draft, onSuccess) => {
-        fetchPostFromJsonAPI('/json_api/note/note_save_draft', {id: noteId, draft: draft}, (result) => onSuccess());
+        fetchPostFromJsonAPI('/json_api/note/note_save_draft', {id: noteId, draft: draft}, () => onSuccess());
+    }
+
+    saveContent = (noteId, content, onSuccess) => {
+        fetchPostFromJsonAPI('/json_api/note/note_save_content', {id: noteId, content: content}, () => {
+            this.findNode(noteId, true).content = content;
+            onSuccess();
+        });
     }
 
     initCategoryTree = (onSuccess) => {

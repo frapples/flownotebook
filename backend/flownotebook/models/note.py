@@ -43,6 +43,14 @@ tags_mark = db.Table(
 )
 
 
+class NoteHistory(db.Model):
+    __tablename__ = 'note_history'
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), primary_key=True)
+    modify_datatime = db.Column(db.DateTime, primary_key=True,
+                                default=db.func.now())
+    content = db.Column(db.Text)
+
+
 class Note(db.Model):
     __tablename__ = "note"
 
@@ -52,6 +60,9 @@ class Note(db.Model):
     draft = db.Column(db.Text, default="")
     is_trash = db.Column(db.Boolean, default=False, nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
+    histories = db.relationship("NoteHistory",
+                                order_by=NoteHistory.modify_datatime,
+                                backref="note")
 
     tags = db.relationship('Tag', secondary=tags_mark)
     media = db.relationship('MediaReference', lazy='dynamic')
@@ -61,13 +72,27 @@ class Note(db.Model):
         self.title = title
         self.content = content
 
+    @property
+    def content(self):
+        if self.histories:
+            return self.histories[len(self.histories) - 1].content
+        else:
+            return ''
+
+    @content.setter
+    def content(self, content):
+        if (content != self.content):
+            self.histories.append(NoteHistory(content=content))
+
     @orm.reconstructor
     def init_on_load(self):
+        return
         # newline=None时，会智能识别流中的'\r', '\n', '\r\n'并转换成'\n'
         with open(self.filepath(), "r", encoding="utf8") as f:
             self.content = f.read()
 
     def write_content(self):
+        return
         # 将'\n'转换成'\r\n'写入流
         with open(self.filepath(), "w", encoding="utf8", newline="\r\n") as f:
             f.write(self.content)

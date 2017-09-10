@@ -34,8 +34,7 @@ export default class Note extends React.Component {
 
     saveDraft = () => {
         if (this.hasDraft()) {
-            noteManager.saveDraft(this.props.noteId, this.state.draftContent, () => {
-            });
+            noteManager.saveDraft(this.props.noteId, this.state.draftContent, () => {});
         }
     }
 
@@ -46,7 +45,9 @@ export default class Note extends React.Component {
     }
 
     saveNote = () => {
-        alert(JSON.stringify(this.state.draftContent));
+        noteManager.saveContent(this.props.noteId, this.state.draftContent, () => {
+            this.setState({noteContent: this.state.draftContent});
+        });
     }
 
     updateData = (id) => {

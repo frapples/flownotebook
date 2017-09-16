@@ -2,6 +2,7 @@ import flask
 from flask import request, session, jsonify
 import sqlalchemy
 from ..models import Category, Note, Tag, db
+from ..utils.patchdiff import linepatchdiff
 
 from .user import jsonapi_logined_validation
 
@@ -238,5 +239,31 @@ def note_tag_del():
         except sqlalchemy.orm.exc.NoResultFound:
             pass
         return jsonify(success=True)
+    else:
+        return jsonify(success=False, reason="NOT_EXISTS")
+
+
+@blueprint.route("/note_histories", methods=["POST"])
+@jsonapi_logined_validation
+def note_histories():
+    note_id = int(request.form["id"])
+    user_id = session['login_user_id']
+    note_ = Note.query.get(note_id)
+    if note_ and note_.category.user_id == user_id:
+        histories = []
+        for i, h in enumerate(note_.histories):
+            if i > 0:
+                old_content = note_.histories[i - 1].content
+            else:
+                old_content = ""
+
+            diff_result = linepatchdiff.diff_struct_result(old_content,
+                                                           h.content)
+
+            histories.append({
+                'datatime': h.modify_datatime.strftime("%Y-%m-%d %H:%M:%S"),
+                'added_line': len(diff_result.added),
+                'deled_line': len(diff_result.deled)})
+        return jsonify(success=True, data=histories)
     else:
         return jsonify(success=False, reason="NOT_EXISTS")

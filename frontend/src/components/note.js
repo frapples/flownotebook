@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon, DatePicker, message, Tag, Row, Col, Input, Popover, Button, Timeline, Card, Spin, Alert, Popconfirm, Tooltip} from 'antd';
 import moment from 'moment';
+import util from 'util';
 import 'moment/locale/zh-cn';
 
 import noteManager from '../network/NoteManager.js';
@@ -15,6 +16,7 @@ export default class Note extends React.Component {
         noteContent: '',
         draftContent: '',
         loading: true,
+        historyCardLoading: true,
         editorMode: false
     }
 
@@ -22,6 +24,7 @@ export default class Note extends React.Component {
         super();
         this.tags = [];
         this.updateData(props.noteId);
+        this.histories = [];
     }
 
     componentWillReceiveProps (nextProps) {
@@ -67,21 +70,27 @@ export default class Note extends React.Component {
         }
     }
 
+    loadHistory = () => {
+        this.setState({historyCardLoading: true});
+        noteManager.noteHistories(this.props.noteId, (h) => {
+            this.histories = h;
+            this.setState({ historyCardLoading: false });
+        });
+    }
+
     render() {
         let result = markdownH1Split(this.state.editorMode ? this.state.draftContent : this.state.noteContent);
 
-        let logs = [
-            '2017-09-01 增加了3行，删除了2行',
-            '2017-09-01 增加了5行，删除了1行',
-            '2017-09-01 增加了8行，删除了2行',
-            '2017-09-01 增加了1行，删除了0行',
-        ]
+
+        let logs = this.histories.map((h) => util.format("%s 增加了%d行，删除了%d行", h.datatime, h.added_line, h.deled_line))
         const updatedLog = (
+            <Card loading={ this.state.historyCardLoading } bordered={false} bodyStyle={{margin: 0, padding: 0}}>
             <Timeline>
-                {
-                    logs.map((s) => <Timeline.Item>{s}</Timeline.Item>)
-                }
+            {
+                logs.map((s) => <Timeline.Item>{s}</Timeline.Item>)
+            }
             </Timeline>
+            </Card>
         );
 
         let editorModeToggle = () => this.setState({editorMode: !this.state.editorMode});
@@ -109,7 +118,9 @@ export default class Note extends React.Component {
                             :
                             <Button icon="edit" size="small" shape="circle" style={{ 'margin-left': '5px'}} onClick={ editorModeToggle } />
                         }
-                        <Popover content={updatedLog} title="修改记录">
+                        <Popover content={updatedLog}
+                                         title="修改记录"
+                                         onVisibleChange={ (visible) => visible && this.loadHistory() }>
                             <Button icon="line-chart" size="small" shape="circle" style={{ 'margin-left': '5px'}} />
                         </Popover>
                     </Col>

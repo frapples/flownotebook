@@ -136,6 +136,12 @@ class NoteManager {
         });
     }
 
+    noteHistories = (noteId, onSuccess) => {
+        fetchPostFromJsonAPI('/json_api/note/note_histories', {id: noteId}, (result) => {
+            onSuccess(result.data);
+        });
+    }
+
     initCategoryTree = (onSuccess) => {
         this.fetchTree((tree) => {
             this.treeCache = {id: -1, name: "", children: tree};

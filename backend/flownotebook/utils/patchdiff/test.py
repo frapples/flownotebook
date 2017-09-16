@@ -1,5 +1,5 @@
 import unittest
-from linepatchdiff import patch, diff
+from .linepatchdiff import patch, diff
 
 
 class TestLineDiffPath(unittest.TestCase):

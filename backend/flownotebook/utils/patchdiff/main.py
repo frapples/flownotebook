@@ -1,4 +1,4 @@
-from linepatchdiff import patch, diff
+from .linepatchdiff import patch, diff
 
 
 def main():

@@ -1,6 +1,6 @@
 import collections
-# from lcs_nodp import LCS
-from lcs import LCS
+# from .lcs_nodp import LCS
+from .lcs import LCS
 
 
 Diff = collections.namedtuple('Diff', ['deled', 'added'])
@@ -79,6 +79,6 @@ def not_included_range(ranges, end):
 
     end_range = ranges[len(ranges) - 1]
     if end_range[1] != end - 1:
-        result.append((end_range + 1, end))
+        result.append((end_range[1] + 1, end))
 
     return result

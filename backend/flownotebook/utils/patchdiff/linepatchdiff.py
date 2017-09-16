@@ -1,11 +1,16 @@
 import re
-import patchdiff
+from . import patchdiff
 
 
-def diff(old, new):
+def diff_struct_result(old, new):
     old = old.split("\n")
     new = new.split("\n")
     diff_result = patchdiff.diff(old, new)
+    return diff_result
+
+
+def diff(old, new):
+    diff_result = diff_struct_result(old, new)
 
     result = []
     for i, c in diff_result.deled:

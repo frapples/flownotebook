@@ -14,7 +14,6 @@
     "case-sensitive-paths-webpack-plugin": "2.1.1",
     "chalk": "1.1.3",
     "commonmark": "^0.28.1",
-    "commonmark-react-renderer": "^4.3.3",
     "css-loader": "0.28.4",
     "dotenv": "4.0.0",
     "eslint": "3.19.0",

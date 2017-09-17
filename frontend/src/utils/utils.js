@@ -18,12 +18,19 @@ export function markdownToc(content) {
     let toc = []
     let event, node;
 
+    const headingContent = (line, start, end) => {
+        while (lines[line][start] == '#' || lines[line][start] == ' ') {
+            start++;
+        }
+        return lines[line].substring(start, end);
+    }
+
     while ((event = walker.next())) {
         node = event.node;
         if (event.entering && node.type === 'heading') {
             let pos = node.sourcepos;
             let line = pos[0][0] - 1;
-            toc.push([node.level, lines[line].substring(pos[0][1], pos[1][1])])
+            toc.push({level: node.level, content: headingContent(line, pos[0][1], pos[1][1])});
         }
     }
     return toc;

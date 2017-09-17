@@ -24,6 +24,8 @@
 	  font-size:12px;
 }
 .toc-anchor a {
+	  color:#666;
+	  font-size:12px;
 	  display:block;
 	  overflow:hidden;
 	  text-overflow:ellipsis;

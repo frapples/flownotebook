@@ -3,13 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import { markdownH1Split, markdownToc } from '../utils/utils.js';
 import { Icon, message, Row, Col, Input, Button, Card, Alert, Popconfirm, Tooltip} from 'antd';
 
+
 import {Textarea} from "./component.js";
 import './markdown.css';
 import './style.css';
-
-import CommonMark from 'commonmark';
-import ReactRenderer from 'commonmark-react-renderer';
-
 
 export class MarkdownEditor extends React.Component {
     render() {
@@ -75,7 +72,7 @@ function HeadingRenderer(props) {
 export class MarkdownViewer extends React.Component {
     render() {
 
-        /* markdownToc(this.props.content);*/
+        let toc_res = generateToc(this.props.content);
         return (
 
             <Row>
@@ -96,12 +93,16 @@ export class MarkdownViewer extends React.Component {
                         />
                     }
                 </Col>
+
                 <Col span={4}>
-                    <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
-                        {
-                            generateToc(this.props.content)
-                        }
-                    </Card>
+                    {
+                        toc_res.isEmpty ||
+                        <Card bodyStyle = {{ padding: '10px', 'min-height': 0 }} className="toc toc-anchor">
+                            {
+                                toc_res.reactDom
+                            }
+                        </Card>
+                    }
                 </Col>
             </Row>
         );
@@ -110,9 +111,15 @@ export class MarkdownViewer extends React.Component {
 
 
 function generateToc(content) {
-    var parser = new CommonMark.Parser();
-    var renderer = new ReactRenderer({allowedTypes: ['heading']});
+    let toc = markdownToc(content).filter((h) => h.level == 2);
 
-    var ast = parser.parse(content);
-    return renderer.render(ast);
+    return {
+        isEmpty: toc.length == 0,
+        reactDom:
+        <ul>
+            {
+                toc.map((h) => <li><a href={"#" + h.content}>{h.content}</a></li>)
+            }
+        </ul>
+    };
 }

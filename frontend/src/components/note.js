@@ -84,7 +84,7 @@ export default class Note extends React.Component {
 
         let logs = this.histories.map((h) => util.format("%s 增加了%d行，删除了%d行", h.datatime, h.added_line, h.deled_line))
         const updatedLog = (
-            <Card loading={ this.state.historyCardLoading } bordered={false} bodyStyle={{margin: 0, padding: 0}}>
+            <Card noHovering loading={ this.state.historyCardLoading } bordered={false} bodyStyle={{margin: 0, padding: 0}}>
             <Timeline>
             {
                 logs.map((s) => <Timeline.Item>{s}</Timeline.Item>)
